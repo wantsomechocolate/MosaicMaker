@@ -1,8 +1,6 @@
 import os
 import mosaicModule2    ##  My Module
 
-## Test Change to see if this changes the file in the directory on my computer
-
 ##  Filename
 
 progDataLog="mosaicMakerProgData.log"
@@ -22,4 +20,3 @@ mosaicModule2.mosaicMakerInterface(progDir,mainDir)                 ##  Go to mo
 ##  Exit the program
 
 mosaicModule2.exitMosaic()                                          ##  I figured I might want something useful here one day. 
-
