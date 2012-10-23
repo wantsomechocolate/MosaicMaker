@@ -164,12 +164,16 @@ def getProgramDirectory(mainDir,progDataLog):
         progData.write(progDir)
         progData.close()
 
-        print "Creating "+progDir+"."
-        os.mkdir(progDir)
-        os.chdir(progDir)
-        readMe=open("README.TXT",'w')
-        readMe.write("YOU READ ME!")
-        readMe.close()
+        print "Creating/Locating "+progDir+"."
+
+        try:
+            os.mkdir(progDir)
+            os.chdir(progDir)
+            readMe=open("README.TXT",'w')
+            readMe.write("YOU READ ME!")
+            readMe.close()
+        except:
+            os.chdir(progDir)
 
         os.chdir(mainDir)
         

@@ -1,5 +1,5 @@
 import os
-import mosaicModule2    ##  My Module
+import mosaicModule    ##  My Module
 
 ##  Preliminary stuff 
 
