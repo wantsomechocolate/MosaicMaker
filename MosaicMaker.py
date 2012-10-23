@@ -18,3 +18,4 @@ mosaicModule.mosaicMakerInterface(progDir,mainDir)             ##  Go to mosaicM
 ##  Exit the program
 
 mosaicModule.exitMosaic()                                      ##  I figured I might want something useful here one day. 
+
