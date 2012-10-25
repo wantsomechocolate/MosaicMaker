@@ -8,6 +8,7 @@
 import ast
 import os, sys
 import math as op
+import numpy as np
 import numbers
 import urllib2
 import json
@@ -286,35 +287,60 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix):
     print "Please wait, the image is being analyzed"
     print "---------------------------------------------------------------------"
     aveR,aveG,aveB=0,0,0        ##  I'm currently just averaging RBG to get the overall color of each section
-    wCount, hCount=0,0          ##  Not really a good way of doing it, I saw dude who did the RMS - maybe I'll try that.
+    subAveR,subAveG,subAveB=0,0,0
+    #wCount, hCount=0,0          ##  Not really a good way of doing it, I saw dude who did the RMS - maybe I'll try that.
     r,g,b=0,1,2                 ##  The pixel data is accessed with the rgb values of 0,1,2 respectively 
     aveRgbArray=[]              ##  Initializing a list. 
+
+    subRgbArray=[]
+
+    fineness=2
+
+    subHeight=int(pixelHeight/fineness)      
+    subWidth=int(pixelWidth/fineness)
+
+    heightSections=int(height/pixelHeight)           
+    widthSections=int(width/pixelWidth)              
+
+    subHeightSections=int(pixelHeight/subHeight)     
+    subWidthSections=int(pixelWidth/subWidth)        
+
+    print "Height = "+str(height)
+    print "Width = "+str(width)
+    print "Section Height = "+str(pixelHeight)
+    print "Section Width = "+str(pixelWidth)
+    print "Section Height/2 = "+str(subHeight)
+    print "Section Width/2 = "+str(subWidth)
 
     ##  This goes across the image one row at a time and does it's thing
     ##  I tell it how many times to go across by calculating the floor of the width divided by the subsection width
     
-    while hCount<int(op.floor(height/pixelHeight)):         ##  I.E. image is 100px high, percentOfPic is 0.1 -> hCount will reach 10 or something
-        wCount=0                                            ##  Re-initilize wCount for new row of sections
-        while wCount<int(op.floor(width/pixelWidth)):       ##  Same as outer while loop, but for the width
+    for hs in range(heightSections):
+        for ws in range(widthSections):
             
-            ##  For a given section this adds up all the pixel's RGB values and then averages them and puts them in a list
-            
-            for w in range(int(pixelWidth)):                
-                for h in range(int(pixelHeight)):
-                    aveR+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][r]
-                    aveG+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][g]
-                    aveB+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][b]
+            for h in range(subHeightSections):
+                for w in range(subWidthSections):
                     
-            aveR=int(round(aveR/(pixelWidth*pixelHeight)))
-            aveG=int(round(aveG/(pixelWidth*pixelHeight)))
-            aveB=int(round(aveB/(pixelWidth*pixelHeight)))
+                    for sh in range(subHeight):
+                        for sw in range(subWidth):
+                            #print '('+str(sw+(subWidth*w)+(pixelWidth*ws))+',',
+                            #print str(sh+(subHeight*h)+(pixelHeight*hs))+')'
 
-            aveRGB=(aveR,aveG,aveB)
-            aveRgbArray.append(aveRGB) 
-                    
-            wCount=wCount+1
-            
-        hCount=hCount+1
+                            subAveR+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][r]
+                            subAveG+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][g]
+                            subAveB+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][b]
+
+                    subAveR=int(round(subAveR/(subWidth*subHeight)))
+                    subAveG=int(round(subAveG/(subWidth*subHeight)))
+                    subAveB=int(round(subAveB/(subWidth*subHeight)))
+                     
+                    subRGB=(subAveR,subAveG,subAveB)
+                    subRgbArray.append(subRGB)
+
+                    subAveR,subAveG,subAveB=0,0,0
+                                         
+            aveRgbArray.append(subRgbArray)
+            subRgbArray=[]
 
     return aveRgbArray
 
@@ -406,13 +432,29 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray):
     errorSumArray=[]
     minErrorArray=[]
     minErrorIndexArray=[]
+    print "This is the ave rgb Array"
+    print aveRgbArray[0]
+    print "this is the ave Rgb Array Web"
+    print aveRgbArrayWeb[0]
+    
+    
     for section in aveRgbArray:
         errorSumArray=[]
+        #print "This is the section"
+        #print section
         for imageRGB in aveRgbArrayWeb:
-            errorSum=0
-            error=[section[i]-imageRGB[i] for i in range(len(section))]
-            for j in error:
-                errorSum+=abs(j)
+            #print "This is the image RGB"
+            #print imageRGB
+            #errorSum=0
+            #error=[section[i]-imageRGB[i] for i in range(len(section))]
+            #for j in error:
+                #errorSum+=abs(j)
+            try:   
+                errorSum=np.sum(np.abs(np.array(section)-np.array(imageRGB)))
+            except:
+                errorSum=10000
+            #print "This is the error SUm"
+            #print errorSum
             errorSumArray.append(errorSum)
 
         minError=min(errorSumArray)
@@ -601,6 +643,8 @@ def getImageUrlArrayNew():
 
 def getAveRgbArrayWebNew(imageUrlArray):
 
+    fineness=2
+
     print "---------------------------------------------------------------------"
     print "Please wait while the URLs are tested"
     print "---------------------------------------------------------------------"
@@ -609,45 +653,65 @@ def getAveRgbArrayWebNew(imageUrlArray):
     wCount, hCount=0,0                          ##  Not really a good way of doing it.
     r,g,b=0,1,2
 
-    aveRgbArrayWeb=[]  
+    aveRgbArrayWeb=[]
+    nonRgbArray=[]
+    defaultRgbArray=[]
+    subRgbArrayWeb=[]
+    nonRGB=(-501,-501,-501)
+    defaultRGB=(-500,-500,-500)
 
     for item in imageUrlArray:
         try:
-            #print "trying"
             filename=cStringIO.StringIO(urllib.urlopen(item).read())
             img=Image.open(filename)
-
             if img.mode!="RGB":
-                nonRGB=(-501,-501,-501)
-                aveRgbArrayWeb.append(nonRGB)
                 print "The image was not RGB"
-
+                for i in range(fineness*fineness):
+                    nonRgbArray.append(nonRGB)
+                aveRgbArrayWeb.append(nonRgbArray)
+                nonRgbArray=[]
+                
             else:
                 webWidth=img.size[0]
-                webHeight=img.size[1]    
+                webHeight=img.size[1]
 
+                subWebWidth=int(webWidth/fineness)
+                subWebHeight=int(webHeight/fineness)
+                
                 pixels=img.load()
 
-                for w in range(int(webWidth)):                
-                    for h in range(int(webHeight)):
-                        aveR+=pixels[w,h][r]
-                        aveG+=pixels[w,h][g]
-                        aveB+=pixels[w,h][b]
+                for ws in range(fineness):
+                    for hs in range(fineness):
                         
-                aveR=int(round(aveR/(webWidth*webHeight)))
-                aveG=int(round(aveG/(webWidth*webHeight)))
-                aveB=int(round(aveB/(webWidth*webHeight)))
+                        for sw in range(subWebWidth):
 
-                aveRGBWeb=(aveR,aveG,aveB)
-                aveRgbArrayWeb.append(aveRGBWeb)
+                            for sh in range(subWebHeight):
+
+                                aveR+=pixels[sw+subWebWidth*ws,sh+subWebHeight*hs][r]
+                                aveG+=pixels[sw+subWebWidth*ws,sh+subWebHeight*hs][g]
+                                aveB+=pixels[sw+subWebWidth*ws,sh+subWebHeight*hs][b]
+
+                        aveR=int(round(aveR/(subWebWidth*subWebHeight)))
+                        aveG=int(round(aveG/(subWebWidth*subWebHeight)))
+                        aveB=int(round(aveB/(subWebWidth*subWebHeight)))
+
+                        subRGBWeb=(aveR,aveG,aveB)
+
+                        subRgbArrayWeb.append(subRGBWeb)
+                        #print subRgbArrayWeb
+                        aveR,aveG,aveB=0,0,0
+
+                aveRgbArrayWeb.append(subRgbArrayWeb)
+                subRgbArrayWeb=[]
 
                 print "File Loaded Successfully"
 
         ## This is so no image that doesn't load will be chosen as a match. But the index of the image url isn't thrown off. 
         except:
             print "File did not Load Successfully"
-            defaultRGB=(-500,-500,-500)
-            aveRgbArrayWeb.append(defaultRGB)
+            for i in range(fineness*fineness):
+                defaultRgbArray.append(defaultRGB)
+            aveRgbArrayWeb.append(defaultRgbArray)
 
     return aveRgbArrayWeb
 
@@ -713,7 +777,10 @@ def refreshUrlImageLists():
     tempFile.close()
 
     shutil.copyfile(sivTemp,siv)
-    os.remove(sivTemp)
+    try:
+        os.remove(sivTemp)
+    except:
+        print "File "+sivTemp+" could not be removed. Delete it yo damn self"
     
     
 def exitMosaic():

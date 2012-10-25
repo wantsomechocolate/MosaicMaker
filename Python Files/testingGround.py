@@ -17,83 +17,63 @@ pixelWidth=op.floor(width*percentOfPic)                 ##  Width of each sectio
 
 pix=im.load()
 
-
-
 print "---------------------------------------------------------------------"
 print "Please wait, the image is being analyzed"
 print "---------------------------------------------------------------------"
 aveR,aveG,aveB=0,0,0        ##  I'm currently just averaging RBG to get the overall color of each section
 subAveR,subAveG,subAveB=0,0,0
-wCount, hCount=0,0          ##  Not really a good way of doing it, I saw dude who did the RMS - maybe I'll try that.
-r,g,b=0,1,2                 ##  The pixel data is accessed with the rgb values of 0,1,2 respectively 
+#wCount, hCount=0,0          ##  Not really a good way of doing it, I saw dude who did the RMS - maybe I'll try that.
+r,g,b=0,1,2
+ 
 aveRgbArray=[]              ##  Initializing a list. 
 subRgbArray=[]
 
-fineness=2
+fineness=1
 
-subHeight=pixelHeight/fineness
-subWidth=pixelWidth/fineness
+subHeight=int(pixelHeight/fineness)      
+subWidth=int(pixelWidth/fineness)
+
+heightSections=int(height/pixelHeight)           
+widthSections=int(width/pixelWidth)              
+
+subHeightSections=int(pixelHeight/subHeight)     
+subWidthSections=int(pixelWidth/subWidth)        
 
 print "Height = "+str(height)
 print "Width = "+str(width)
 print "Section Height = "+str(pixelHeight)
 print "Section Width = "+str(pixelWidth)
-print "Section Height/3 = "+str(subHeight)
-print "Section Width/3 = "+str(subWidth)
+print "Section Height/2 = "+str(subHeight)
+print "Section Width/2 = "+str(subWidth)
 
 
 ##  This goes across the image one row at a time and does it's thing
 ##  I tell it how many times to go across by calculating the floor of the width divided by the subsection width
 
-while hCount<int(op.floor(height/pixelHeight)):         ##  I.E. image is 100px high, percentOfPic is 0.1 -> hCount will reach 10 or something
-    wCount=0                                            ##  Re-initilize wCount for new row of sections
-    while wCount<int(op.floor(width/pixelWidth)):       ##  Same as outer while loop, but for the width
+for hs in range(heightSections):
+    for ws in range(widthSections):
         
-        ##  For a given section this adds up all the pixel's RGB values and then averages them and puts them in a list
+        for h in range(subHeightSections):
+            for w in range(subWidthSections):
+                
+                for sh in range(subHeight):
+                    for sw in range(subWidth):
+                        #print '('+str(sw+(subWidth*w)+(pixelWidth*ws))+',',
+                        #print str(sh+(subHeight*h)+(pixelHeight*hs))+')'
 
-        for h in range(int(pixelHeight)):
-
-            for w in range(int(pixelWidth)):                
-
-                for sh in range(int(subHeight)):
-
-                    for sw in range(int(subWidth)):
-                        print str(sw+subWidth*w)+','+str(sh+subHeight*h)
-                        subAveR+=pix[sw+subWidth*w,sh+subHeight*h][r]
-                        subAveG+=pix[sw+subWidth*w,sh+subHeight*h][g]
-                        subAveB+=pix[sw+subWidth*w,sh+subHeight*h][b]
+                        subAveR+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][r]
+                        subAveG+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][g]
+                        subAveB+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][b]
 
                 subAveR=int(round(subAveR/(subWidth*subHeight)))
                 subAveG=int(round(subAveG/(subWidth*subHeight)))
                 subAveB=int(round(subAveB/(subWidth*subHeight)))
-
+                 
                 subRGB=(subAveR,subAveG,subAveB)
                 subRgbArray.append(subRGB)
-                        
-##                aveR+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][r]
-##                aveG+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][g]
-##                aveB+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][b]
-##                
-##        aveR=int(round(aveR/(pixelWidth*pixelHeight)))
-##        aveG=int(round(aveG/(pixelWidth*pixelHeight)))
-##        aveB=int(round(aveB/(pixelWidth*pixelHeight)))
-##
-##        aveRGB=(aveR,aveG,aveB)
-##        aveRgbArray.append(aveRGB) 
-                
-        wCount=wCount+1
-        
-    hCount=hCount+1
 
-##print "-----------------------------------------"
-##print "Sample RGB Data"
-##for i in range(0,len(aveRgbArray),10):
-##    print aveRgbArray[i]
-##print "-----------------------------------------"
+                subAveR,subAveG,subAveB=0,0,0
+                                     
+        aveRgbArray.append(subRgbArray)
+        subRgbArray=[]
 
-print "-----------------------------------------"
-print "Sample RGB Data"
-for i in range(0,len(subRgbArray),10):
-    print subRgbArray[i]
-print "-----------------------------------------"
-    
