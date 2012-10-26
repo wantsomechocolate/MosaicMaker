@@ -18,10 +18,11 @@ from PIL import Image
 ##  ***From http://markup.sourceforge.net/
 from markup_1_8 import markup   ##  ***
 import shutil
+import time
 
 
 ##  This the program "shell" Everything runs from here. 
-def mosaicMakerInterface(progDir, mainDir):
+def mosaicMakerInterface(progDir, mainDir, imageQueryLog):
 
     print "---------------------------------------------------------------------"
     print "Choose one of the following:"
@@ -57,57 +58,61 @@ def mosaicMakerInterface(progDir, mainDir):
         aveRgbArray=getAveRgbArray(width, height, pixelWidth, pixelHeight, pix)
         
         
-        filename='savedImageQueries.log'
+        #filename='savedImageQueries.log'
+        filename=imageQueryLog
         fileContents=getFileContents(filename)
 
         print "---------------------------------------------------------------------"
         prompt="Choose queries from list using comma separated integers. [All]"
         userSelectedQueries=getUserSelectedQueries(fileContents,prompt)
-        returnedArray=getImgUrl_and_aveRgbArrayWeb_forSelection(userSelectedQueries)
+        returnedArray=getImgUrl_and_aveRgbArrayWeb_forSelection(userSelectedQueries, imageQueryLog)
 
         imageUrlArray=returnedArray[0]
         aveRgbArrayWeb=returnedArray[1]
-        
+
+        print "Entering output URL at: "+str(time.time())
         outputUrlList=getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray)
+        print "Exited output URL at: "+str(time.time())
         
         mosaicDisplayWidth=800
         cssFile='mosaicStyle.css' 
 
         filenameHTML=generateHTML(width,height,pixelWidth,pixelHeight,mosaicDisplayWidth,cssFile,outputUrlList,imageFile, progDir, mainDir)
    
-        mosaicMakerInterface(progDir, mainDir)
+        mosaicMakerInterface(progDir, mainDir, imageQueryLog)
         
     elif choice==2:
         
         print "You picked choice 2"
         
-        imageUrlArray=getImageUrlArrayNew()
+        imageUrlArray=getImageUrlArrayNew(imageQueryLog)
         
         aveRgbArrayWeb=getAveRgbArrayWebNew(imageUrlArray)
         
-        logNewResults(imageUrlArray, aveRgbArrayWeb)
+        logNewResults(imageUrlArray, aveRgbArrayWeb, imageQueryLog)
         
-        mosaicMakerInterface(progDir, mainDir)
+        mosaicMakerInterface(progDir, mainDir, imageQueryLog)
 
     elif choice==3:
 
         print "You picked choice 3"
         print "---------------------------------------------------------------------"
-        filename='savedImageQueries.log'
+        #filename='savedImageQueries.log'
+        filename=imageQueryLog
         fileContents=getFileContents(filename)
         prompt="Please hit enter to continue [Enter]"
         userSelectedQueries=getUserSelectedQueries(fileContents,prompt)
         
-        mosaicMakerInterface(progDir, mainDir)
+        mosaicMakerInterface(progDir, mainDir, imageQueryLog)
     
     elif choice==4:
 
         print "You picked choice 4"
         print "---------------------------------------------------------------------"
         
-        refreshUrlImageLists()
+        refreshUrlImageLists(imageQueryLog)
 
-        mosaicMakerInterface(progDir, mainDir)
+        mosaicMakerInterface(progDir, mainDir, imageQueryLog)
 
     else: print "Bye!"
 
@@ -294,7 +299,7 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix):
 
     subRgbArray=[]
 
-    fineness=3
+    fineness=2
 
     subHeight=int(pixelHeight/fineness)      
     subWidth=int(pixelWidth/fineness)
@@ -387,11 +392,12 @@ def getUserSelectedQueries(fileContents, prompt):
 
     return userSelectedQueries
 
-def getImgUrl_and_aveRgbArrayWeb_forSelection(selection):
+def getImgUrl_and_aveRgbArrayWeb_forSelection(selection, imageQueryLog):
     imageUrlArray=[]
     aveRgbArrayWeb=[]
 
-    logFilename="savedImageQueries.log"
+    #logFilename="savedImageQueries.log"
+    logFilename=imageQueryLog
     fileContents=getFileContents(logFilename)
 
     singleQueryImageList=[]
@@ -520,11 +526,11 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     imageFilename=imageFile[imageFile.rindex('/')+1:imageFile.rindex('.')]
     
     print "---------------------------------------------------------------------"
-    destFileHTML=raw_input([str("Destination File for HTML Output?["+imageFilename+" Mosaic HTML.html]")])
+    destFileHTML=raw_input([str("Destination File for HTML Output?["+imageFilename+" Mosaic F2 HTML.html]")])
     print "---------------------------------------------------------------------"
 
     if destFileHTML=="":
-        destFileHTML=imageFilename+" Mosaic HTML.html"
+        destFileHTML=imageFilename+" Mosaic F2 HTML.html"
 
 
     os.chdir(progDir+'/'+imageFilename)
@@ -575,7 +581,7 @@ def createCSS():
     return cssFilename
 
 
-def getImageUrlArrayNew():
+def getImageUrlArrayNew(imageQueryLog):
 
     ##  Below uses a custom CSE and the google API to retrieve search results
     ##  It is limited to 100 queries a day and 100 results per query 
@@ -593,7 +599,8 @@ def getImageUrlArrayNew():
     if searchQuery=="":
         searchQuery='mylittlepony'
 
-    logFile=open('savedImageQueries.log','a')
+    #logFile=open('savedImageQueries.log','a')
+    logFile=open(imageQueryLog,'a')
     logFile.write('\n')
     logFile.write("Search: "+searchQuery)
     logFile.write('\n')
@@ -643,7 +650,7 @@ def getImageUrlArrayNew():
 
 def getAveRgbArrayWebNew(imageUrlArray):
 
-    fineness=3
+    fineness=2
 
     print "---------------------------------------------------------------------"
     print "Please wait while the URLs are tested"
@@ -718,9 +725,10 @@ def getAveRgbArrayWebNew(imageUrlArray):
     return aveRgbArrayWeb
 
 
-def logNewResults(imageUrlArray,aveRgbArrayWeb):
+def logNewResults(imageUrlArray,aveRgbArrayWeb, imageQueryLog):
 
-    savedImageFilename='savedImageQueries.log'
+    #savedImageFilename='savedImageQueries.log'
+    savedImageFilename=imageQueryLog
     siv=savedImageFilename
     sivTemp=siv[:siv.index('.')]+'Temp'+siv[siv.rindex('.'):]
     
@@ -745,9 +753,10 @@ def logNewResults(imageUrlArray,aveRgbArrayWeb):
     print "Your new search has been added to "+savedImageFilename+"."
 
 
-def refreshUrlImageLists():
+def refreshUrlImageLists(imageQueryLog):
 
-    savedImageFile='savedImageQueries.log'
+    #savedImageFile='savedImageQueries.log'
+    savedImageFile=imageQueryLog
     siv=savedImageFile
     sivTemp=siv[:siv.index('.')]+'Test'+siv[siv.rindex('.'):]
 

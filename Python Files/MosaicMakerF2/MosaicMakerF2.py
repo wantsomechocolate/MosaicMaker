@@ -1,9 +1,11 @@
 import os
-import mosaicModule    ##  My Module
+import mosaicModuleF2 as mosaicModule    ##  My Module
 
 ##  Preliminary stuff 
 
 progDataLog="mosaicMakerProgData.log"                          ##  The name of the file used to store program data
+
+imageQueryLog="savedImageQueriesF2.log"
 
 mainDir=os.getcwd()                                            ##  Get directory that program is run from.
 
@@ -13,8 +15,9 @@ progDir=mosaicModule.enterMosaic(mainDir,progDataLog)          ##  Check for log
        
 ## Enter the program loop
 
-mosaicModule.mosaicMakerInterface(progDir,mainDir)             ##  Go to mosaicModule to see what this does. Aka everything. 
+mosaicModule.mosaicMakerInterface(progDir,mainDir,imageQueryLog)     ##  Go to mosaicModule to see what this does. Aka everything. 
 
 ##  Exit the program
 
 mosaicModule.exitMosaic()                                      ##  I figured I might want something useful here one day. 
+
