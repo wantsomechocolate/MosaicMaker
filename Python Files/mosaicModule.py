@@ -294,7 +294,7 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix):
 
     subRgbArray=[]
 
-    fineness=2
+    fineness=3
 
     subHeight=int(pixelHeight/fineness)      
     subWidth=int(pixelWidth/fineness)
@@ -305,12 +305,12 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix):
     subHeightSections=int(pixelHeight/subHeight)     
     subWidthSections=int(pixelWidth/subWidth)        
 
-    print "Height = "+str(height)
-    print "Width = "+str(width)
-    print "Section Height = "+str(pixelHeight)
-    print "Section Width = "+str(pixelWidth)
-    print "Section Height/2 = "+str(subHeight)
-    print "Section Width/2 = "+str(subWidth)
+##    print "Height = "+str(height)
+##    print "Width = "+str(width)
+##    print "Section Height = "+str(pixelHeight)
+##    print "Section Width = "+str(pixelWidth)
+##    print "Section Height/2 = "+str(subHeight)
+##    print "Section Width/2 = "+str(subWidth)
 
     ##  This goes across the image one row at a time and does it's thing
     ##  I tell it how many times to go across by calculating the floor of the width divided by the subsection width
@@ -432,10 +432,10 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray):
     errorSumArray=[]
     minErrorArray=[]
     minErrorIndexArray=[]
-    print "This is the ave rgb Array"
-    print aveRgbArray[0]
-    print "this is the ave Rgb Array Web"
-    print aveRgbArrayWeb[0]
+    #print "This is the ave rgb Array"
+    #print aveRgbArray[0]
+    #print "this is the ave Rgb Array Web"
+    #print aveRgbArrayWeb[0]
     
     
     for section in aveRgbArray:
@@ -643,7 +643,7 @@ def getImageUrlArrayNew():
 
 def getAveRgbArrayWebNew(imageUrlArray):
 
-    fineness=2
+    fineness=3
 
     print "---------------------------------------------------------------------"
     print "Please wait while the URLs are tested"
@@ -654,11 +654,18 @@ def getAveRgbArrayWebNew(imageUrlArray):
     r,g,b=0,1,2
 
     aveRgbArrayWeb=[]
+    
     nonRgbArray=[]
     defaultRgbArray=[]
+    
     subRgbArrayWeb=[]
+    
     nonRGB=(-501,-501,-501)
     defaultRGB=(-500,-500,-500)
+
+    for i in range(fineness*fineness):
+        nonRgbArray.append(nonRGB)
+        defaultRgbArray.append(defaultRGB)
 
     for item in imageUrlArray:
         try:
@@ -666,10 +673,7 @@ def getAveRgbArrayWebNew(imageUrlArray):
             img=Image.open(filename)
             if img.mode!="RGB":
                 print "The image was not RGB"
-                for i in range(fineness*fineness):
-                    nonRgbArray.append(nonRGB)
                 aveRgbArrayWeb.append(nonRgbArray)
-                nonRgbArray=[]
                 
             else:
                 webWidth=img.size[0]
@@ -709,8 +713,6 @@ def getAveRgbArrayWebNew(imageUrlArray):
         ## This is so no image that doesn't load will be chosen as a match. But the index of the image url isn't thrown off. 
         except:
             print "File did not Load Successfully"
-            for i in range(fineness*fineness):
-                defaultRgbArray.append(defaultRGB)
             aveRgbArrayWeb.append(defaultRgbArray)
 
     return aveRgbArrayWeb
