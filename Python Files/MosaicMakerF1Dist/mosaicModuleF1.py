@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# Filename: queriedImageManipulation.py
-
 import ast
 import os, sys
 import math as op
@@ -13,13 +10,51 @@ from PIL import Image
 from markup_1_8 import markup
 import shutil
 import time
+import mosaicModule as mm
 
-def getImgUrl_and_aveRgbArrayWeb_forSelection(selection):
+def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix):
+    print "---------------------------------------------------------------------"
+    print "Please wait, the image is being analyzed"
+    print "---------------------------------------------------------------------"
+    aveR,aveG,aveB=0,0,0        ##  I'm currently just averaging RBG to get the overall color of each section
+    wCount, hCount=0,0          ##  Not really a good way of doing it, I saw dude who did the RMS - maybe I'll try that.
+    r,g,b=0,1,2                 ##  The pixel data is accessed with the rgb values of 0,1,2 respectively 
+    aveRgbArray=[]              ##  Initializing a list. 
+
+    ##  This goes across the image one row at a time and does it's thing
+    ##  I tell it how many times to go across by calculating the floor of the width divided by the subsection width
+    
+    while hCount<int(op.floor(height/pixelHeight)):         ##  I.E. image is 100px high, percentOfPic is 0.1 -> hCount will reach 10 or something
+        wCount=0                                            ##  Re-initilize wCount for new row of sections
+        while wCount<int(op.floor(width/pixelWidth)):       ##  Same as outer while loop, but for the width
+            
+            ##  For a given section this adds up all the pixel's RGB values and then averages them and puts them in a list
+            
+            for w in range(int(pixelWidth)):                
+                for h in range(int(pixelHeight)):
+                    aveR+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][r]
+                    aveG+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][g]
+                    aveB+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][b]
+                    
+            aveR=int(round(aveR/(pixelWidth*pixelHeight)))
+            aveG=int(round(aveG/(pixelWidth*pixelHeight)))
+            aveB=int(round(aveB/(pixelWidth*pixelHeight)))
+
+            aveRGB=(aveR,aveG,aveB)
+            aveRgbArray.append(aveRGB) 
+                    
+            wCount=wCount+1
+            
+        hCount=hCount+1
+
+    return aveRgbArray
+
+def getImgUrl_and_aveRgbArrayWeb_forSelection(selection, imageQueryLog):
     imageUrlArray=[]
     aveRgbArrayWeb=[]
 
-    logFilename="savedImageQueriesF1.log"
-    fileContents=getFileContents(logFilename)
+    logFilename=imageQueryLog
+    fileContents=mm.getFileContents(logFilename)
 
     singleQueryImageList=[]
     singleQueryRGBList=[]
@@ -54,74 +89,32 @@ def getImgUrl_and_aveRgbArrayWeb_forSelection(selection):
 
     return returnedArray
 
+def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray):
+    errorSum=0
+    errorSumArray=[]
+    minErrorArray=[]
+    minErrorIndexArray=[]
+    for section in aveRgbArray:
+        errorSumArray=[]
+        for imageRGB in aveRgbArrayWeb:
+            errorSum=0
+            error=[section[i]-imageRGB[i] for i in range(len(section))]
+            for j in error:
+                errorSum+=abs(j)
+            errorSumArray.append(errorSum)
 
+        minError=min(errorSumArray)
+        minErrorArray.append(minError)
 
+        minErrorIndex=errorSumArray.index(minError)
+        minErrorIndexArray.append(minErrorIndex)
 
-def getImageUrlArrayNew():
+    outputUrlList=[]
+    for item in minErrorIndexArray:
+        outputUrlList.append(imageUrlArray[item])
 
-    ##  Below uses a custom CSE and the google API to retrieve search results
-    ##  It is limited to 100 queries a day and 100 results per query 
+    return outputUrlList
 
-    MY_API_KEY="AIzaSyD1UeuzDXdKGgcoqH4385D4SF8c2HF8LkY"        ##  This is my personal key for my API
-    MY_API_KEY_2="AIzaSyDHprCKraIGVmXnBhuHTPJ8DaWo6hCi9Os"        ## A different one
-    SEARCH_ENGINE="010404009348550142839:mz7ovp-utrg"           ##  This is my personal code for my CSE (custom search engine)
-    searchType="image"                                          ##  A critera for the urlopen call to limit search to images
-    SEARCH_URL="https://www.googleapis.com/customsearch/v1"     ##  I made this a string just to make the code more readable?
-
-    print "---------------------------------------------------------------------"
-    searchQuery=raw_input(["What would you like your image query to be?"])
-    print "---------------------------------------------------------------------"
-
-    if searchQuery=="":
-        searchQuery='mylittlepony'
-
-    logFile=open('savedImageQueriesF1.log','a')
-    logFile.write('\n')
-    logFile.write("Search: "+searchQuery)
-    logFile.write('\n')
-    logFile.close()
-
-    searchQuery=''.join(searchQuery.strip(' ').split(' '))
-
-##    print "---------------------------------------------------------------------"
-##    imgColorType=raw_input(["The default color type is 'color'. Others will become available."])
-##    print "---------------------------------------------------------------------"
-
-    imgColorType='color'
-
-    numberOfResults=100
-
-
-    print "---------------------------------------------------------------------"
-    print "Please wait while the images are retrieved."
-    print "---------------------------------------------------------------------"
-
-    startIndex=1
-    imageUrlArray=[]                    ##  This will hold all the URLs for me
-
-    while startIndex<int(numberOfResults):
-
-        try:
-            ##  I got this line straight off the internet - and then made all the strings into variables and put my own stuff in. 
-            data = urllib2.urlopen(SEARCH_URL+'?'+'key='+MY_API_KEY+'&'+'cx='+SEARCH_ENGINE+'&'+'q='+searchQuery+'&'+'searchType='+searchType+'&start='+str(startIndex)+'&'+'imgColorType='+imgColorType)
-
-        except:
-            data = urllib2.urlopen(SEARCH_URL+'?'+'key='+MY_API_KEY_2+'&'+'cx='+SEARCH_ENGINE+'&'+'q='+searchQuery+'&'+'searchType='+searchType+'&start='+str(startIndex)+'&'+'imgColorType='+imgColorType)
-
-        data = json.load(data)
-
-        ##  Manoj's Code - much better. 20 lines became 3
-
-        for item in data["items"]:
-                imageUrlArray.append(item["link"])
-
-        startIndex=startIndex+10
-
-    print "---------------------------------------------------------------------"
-    print "The image Urls have been collected"
-    print "---------------------------------------------------------------------"
-
-    return imageUrlArray
 
 def getAveRgbArrayWebNew(imageUrlArray):
 
@@ -174,4 +167,3 @@ def getAveRgbArrayWebNew(imageUrlArray):
             aveRgbArrayWeb.append(defaultRGB)
 
     return aveRgbArrayWeb
-
