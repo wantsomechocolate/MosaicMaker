@@ -1,6 +1,6 @@
 
 import os
-import mosaicModule as mosaicModule    ##  My Module
+import mosaicModuleFAXP as mosaicModule    ##  My Module
 
 ## There is a bug when you try to actually pick a different name for the image you select
 ##  Preliminary stuff 

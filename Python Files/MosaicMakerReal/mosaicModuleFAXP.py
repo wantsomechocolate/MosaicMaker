@@ -1,8 +1,15 @@
 #!/usr/bin/python
-# Filename: mosaicModule.py
+# Filename: mosaicModuleFAXP.py
 
 ## This file contains about 90% of the code. I think I should break it into peices.
-##This currently only works for color images :(
+## This currently only works for color images :(
+## There is also a problem with choosing a different percent of image. I need to start
+## writing tests for my code
+
+## Ask use what is more important, color or composition or both.
+## JUST CHANGE THE WAY YOU FIND PIXEL HIEGHT AND PIXEL WITH AND THE NECESSITY OF USING THE
+## SAME ASPECT RATIO IS GONE ON THE BASE IMAGE SIDE
+## STILL HAVE TO LOOK INTO THE WEB IMAGE SIDE.
 
 ## All of the necessary imports
 import os, sys
@@ -50,10 +57,22 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         height=imCopy.size[1]                                   ##  Get height of image
         pix=imCopy.load()                                       ##  Noooow we have pixel data
 
-        percentOfPic=getPercentOfPic()             ##  How small do you want the images that make up the mosaic to be?
+        ##  How small do you want the images that make up the mosaic to be?
+        ##  If I want squares and the user picks 10%, then it has to be at least 10%, so
+        ##  basically accross the shorter dimension determines the size of each square.
+        
+        percentOfPic=getPercentOfPic()             
 
-        pixelHeight=op.floor(height*percentOfPic)               ##  Height of each section
-        pixelWidth=op.floor(width*percentOfPic)                 ##  Width of each section
+        if width<=height:
+            pixelWidth=op.floor(width*percentOfPic)
+            pixelHeight=pixelWidth
+        else:
+            pixelHeight=op.floor(width*percentOfPic)
+            pixelWidth=pixelHeight
+
+        #pixelHeight=op.floor(height*percentOfPic)               ##  Height of each section
+        #pixelWidth=op.floor(width*percentOfPic)                 ##  Width of each section
+        
         aveRgbArray=getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness)
         
         filename=imageQueryLog
@@ -75,7 +94,7 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         print "Looking through images to find best matches for image section"
         outputUrlSet = set(outputUrlList)
         print "There are "+str(len(outputUrlSet))+" unique images in this mosaic"
-        print "Filling "+str((1/percentOfPic)**2)+" possible spots"
+        print "Filling "+str(int(height/pixelHeight)*int(width/pixelWidth))+" possible spots"
         ### Added 12/13/2013
         
         exiTime=time.time()
@@ -325,7 +344,7 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
     aveRgbArray=[]              ##  Initializing a list. 
 
     if fineness==1:
-        wCount, hCount=0,0          ##  Not really a good way of doing it, I saw dude who did the RMS - maybe I'll try that.
+        wCount, hCount=0,0          ##  Not really a good way of doing it, I saw a dude who did the RMS - maybe I'll try that.
 
         while hCount<int(op.floor(height/pixelHeight)):         ##  I.E. image is 100px high, percentOfPic is 0.1 -> hCount will reach 10 or something
             wCount=0                                            ##  Re-initilize wCount for new row of sections
@@ -427,6 +446,170 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
     ## subsection (4) for a total of 400 subsections)
 
     return aveRgbArray
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def getAveRgbArraySquare(width, height, pixelWidth, pixelHeight, pix, fineness):
+    print "---------------------------------------------------------------------"
+    print "Please wait, the image is being analyzed"
+    print "---------------------------------------------------------------------"
+
+    ## Initialize the variables that will store rbg data about each section
+    aveR,aveG,aveB=0,0,0
+    ##  The pixel data is accessed with the rgb values of 0,1,2 respectively 
+    r,g,b=0,1,2
+    ##  Initializing a list.
+    aveRgbArray=[]               
+
+    ## The fineness is something I used to try and look more at the distribution of color in each sub section
+    ## without getting too crazy. I think it might just be easier to compare histograms of resized version of each image?
+    ## That might make my life super easy and improve quality. That way I could take a peice of the image of an aspect ratio
+    ## that would fit in the desired container and then shrink it down to the same size as the peice of image I'm looking at
+    ## and then compare color distribution using a histogram. Histograms have the problem of not finding similar looking
+    ## images because they only look at color, but I think that would be fine for this.
+
+    ##Anyway, Here the finess is one, so I just get the average RGB of each section, the sections are currently
+    ##always the same aspect ratio as the original image, but I'm commenting so I know what to change to fix that.
+    if fineness==1:
+        
+        ## These variables are used to step through the sub sections. Because of the way things are currently done,
+        ## they will end up being equal. 10X10, 20x20 etc. But I'm trying to change that
+        wCount, hCount=0,0  
+
+        ##  pixelHeight/Width is currently taken to be a percentage of the original image dimensions. So changing
+        ##  those values will allow this function to step through a different number of boxes? I think so!
+        while hCount<int(op.floor(height/pixelHeight)):         
+            wCount=0                                            ##  Re-initilize wCount for new row of sections
+            while wCount<int(op.floor(width/pixelWidth)):       ##  Same as outer while loop, but for the width
+                
+                ##  For a given section this adds up all the pixel's RGB values and then averages them and puts them in a list
+                
+                for w in range(int(pixelWidth)):                
+                    for h in range(int(pixelHeight)):
+                        aveR+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][r]
+                        aveG+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][g]
+                        aveB+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][b]
+                        
+                aveR=int(round(aveR/(pixelWidth*pixelHeight)))
+                aveG=int(round(aveG/(pixelWidth*pixelHeight)))
+                aveB=int(round(aveB/(pixelWidth*pixelHeight)))
+
+
+                aveRGB=(aveR,aveG,aveB)
+                aveRgbArray.append(aveRGB) 
+                        
+                wCount=wCount+1
+                
+            hCount=hCount+1
+
+    ## Example: 100px by 200 px
+    ## Fineness = 2
+    ## Pixel width and Pixel height were chosen to be 10% They are calculated like so...
+    ##  pixelHeight=op.floor(height*percentOfPic)               ##  Height of each section
+    ##  pixelWidth=op.floor(width*percentOfPic)                 ##  Width of each section
+    ## Percent of pic is user chosen
+
+    else:
+        subAveR,subAveG,subAveB=0,0,0
+        subRgbArray=[]
+
+        subHeight=int(pixelHeight/fineness)                 ## .1*100/2=5
+        subWidth=int(pixelWidth/fineness)                   ## .1*200/2=10
+        print "SubHeight="+str(subHeight)                   
+        print "SubWidth="+str(subWidth)
+
+        heightSections=int(height/pixelHeight)              ## 100/10 = 10
+        widthSections=int(width/pixelWidth)                 ## 200/20 = 10  These should equal the percentage chosen (10%)
+        print "HeightSections="+str(heightSections)
+        print "WidthSections="+str(widthSections)
+        
+        #subHeightSections=int(pixelHeight/subHeight)     
+        #subWidthSections=int(pixelWidth/subWidth)
+        subHeightSections=fineness                          ## =2
+        subWidthSections=fineness                           ## =2
+        print "SubHeightSections="+str(subHeightSections)
+        print "SubWidthSections="+str(subWidthSections)
+
+        ##  This goes across the image one row at a time and does it's thing
+        ##  I tell it how many times to go across by calculating the floor of the width divided by the subsection width
+
+        ## For this example, the image is being broken into a 10x10 grid. (But the sections are not square)
+        
+        for hs in range(heightSections):           ## Calculated to be 10 in example      
+            for ws in range(widthSections):         ## Calculated to be 10 in example
+
+                ## Basically, for each section in the 10 by 10 grid. Take the fineness and break up each section into another
+                ## grid, in this example, the grid for each section is 2x2.
+                
+                for h in range(subHeightSections):          #=2
+                    for w in range(subWidthSections):       #=2
+
+                        # For each subsection (2x2) of each section (10x10)
+                        # add up and average all the r,g, and b values.
+                        # adding up the subsection dimensions in this exapmle gets you 10x20 which matches the
+                        # dimensions of the sections themselves, multplying those out to get overall image dimensions
+                        # gives 100X200. This example was chosen to work out even, which rounding errors and floor
+                        # operations there may be some other behavoir going on for other dimensions.
+                        
+                        for sh in range(subHeight):         #=5
+                            for sw in range(subWidth):      #=10
+                                #print '('+str(sw+(subWidth*w)+(pixelWidth*ws))+',',
+                                #print str(sh+(subHeight*h)+(pixelHeight*hs))+')'
+
+                                subAveR+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][r]
+                                subAveG+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][g]
+                                subAveB+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][b]
+
+                        ## After the r,g, and b vlaues are added, there should be subwidth*subheight values 
+                        ## (50 in this ex.) so divide by that number to get the average
+            
+                        subAveR=int(round(subAveR/(subWidth*subHeight)))
+                        subAveG=int(round(subAveG/(subWidth*subHeight)))
+                        subAveB=int(round(subAveB/(subWidth*subHeight)))
+                         
+                        subRGB=(subAveR,subAveG,subAveB)
+                        subRgbArray.append(subRGB)
+
+                        subAveR,subAveG,subAveB=0,0,0
+                                             
+                aveRgbArray.append(subRgbArray)
+                subRgbArray=[]
+
+    ## At the end of this there will be a list item for every section (100), containing a list item for every
+    ## subsection (4) for a total of 400 subsections)
+
+    return aveRgbArray
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def getPercentOfPic():
     start=1
@@ -610,7 +793,10 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     aspectRatio=float(width)/float(height)
 
     imageWidthWeb=mosaicDisplayWidth/numberOfPics
-    imageHeightWeb=int(op.floor(imageWidthWeb/aspectRatio))
+    #imageHeightWeb=int(op.floor(imageWidthWeb/aspectRatio))
+    imageHeightWeb=imageWidthWeb
+
+    
 
     ##  This will also be determined a different way. 
     imagesPerRow=numberOfPics
@@ -641,7 +827,7 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
 
     ##  Make a div with all the images floating inside
     page.div(Class = 'imageContainer', style='width:'+str(imageContainerWidth)+'; height:'+str(imageContainerHeight))
-    page.img( src=outputUrlList, height=imageHeightWeb, width=imageWidthWeb, alt=searchTerm )
+    page.img( src=outputUrlList, alt=searchTerm ) #height=imageHeightWeb, width=imageWidthWeb, 
     page.div.close()
 
     ##  Print html to an actual file so it can be viewed
@@ -667,14 +853,14 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     print "The page "+destFileHTML+" was created"
     print "---------------------------------------------------------------------"
 
-    cssFilename=createCSS()
+    cssFilename=createCSS(imageHeightWeb, imageWidthWeb)
     jsFilename=createJs()
 
     os.chdir(mainDir)
 
     return destFileHTML
 
-def createCSS():
+def createCSS(img_height, img_width):
     cssFilename="mosaicStyle.css"
     mosaicStyle=open(cssFilename,'w')
     mosaicStyle.write(
@@ -700,8 +886,10 @@ def createCSS():
     img {\n
         float:left;\n
         padding:0px;\n
-        margin:0px;\n
-    }\n""")
+        margin:0px;\n"""+
+        "width:"+str(img_width)+";"+
+        "height:"+str(img_height)+";"+
+    """}\n""")
     
     mosaicStyle.close()
     return cssFilename
