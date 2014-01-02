@@ -206,7 +206,7 @@ def getProgramDirectory(mainDir,progDataLog):
         root.withdraw()                             ##  withdraw it!
 
         #baseDirectory=tkFileDialog.askdirectory(focus=True)   ##  imageFile will store the filename of the image you choose
-        baseDirectory=tkinter.filedialog.askdirectory(focus=True)   ##  imageFile will store the filename of the image you choose
+        baseDirectory=tkinter.filedialog.askdirectory()#focus=True)   ##  imageFile will store the filename of the image you choose
         root.destroy()                              ##  Some overkill
 
         progDir=baseDirectory+'/'+"Mosaic Maker"
@@ -242,7 +242,7 @@ def getIntegerInput(start, end, promptString, default):
     flag="BAD"
     while flag=="BAD":
 
-        userSelection=raw_input(promptString)
+        userSelection=input(promptString)
 
         if userSelection=="":
             userSelection=default
@@ -293,7 +293,7 @@ def saveImageCopy(imCopy, imageFile, progDir, mainDir):
     imageFileExtension=imageFile[imageFile.rindex('.'):]
 
     print ("---------------------------------------------------------------------")
-    newFilename=raw_input([str("Name of copy of image to store with html:["+imageFilename+".png]")])
+    newFilename=input([str("Name of copy of image to store with html:["+imageFilename+".png]")])
     print ("---------------------------------------------------------------------")
     
     if newFilename=="":
@@ -637,7 +637,7 @@ def getUserSelectedQueries(fileContents, prompt):
 
     print ("---------------------------------------------------------------------")
     ##  There is no error checking here. 
-    querySelection=raw_input([prompt])
+    querySelection=input([prompt])
     if querySelection=='':
         querySelection='0'
     querySelection=ast.literal_eval(querySelection)
@@ -837,7 +837,7 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     imageFilename=imageFile[imageFile.rindex('/')+1:imageFile.rindex('.')]
     
     print ("---------------------------------------------------------------------")
-    destFileHTML=raw_input([str("Destination File for HTML Output?["+imageFilename+" Mosaic F"+str(fineness)+" HTML.html]")])
+    destFileHTML=input([str("Destination File for HTML Output?["+imageFilename+" Mosaic F"+str(fineness)+" HTML.html]")])
     print ("---------------------------------------------------------------------")
 
     if destFileHTML=="":
@@ -926,7 +926,7 @@ def getImageUrlArrayNew(imageQueryLog):
     SEARCH_URL="https://www.googleapis.com/customsearch/v1"     ##  I made this a string just to make the code more readable?
 
     print ("---------------------------------------------------------------------")
-    searchQuery=raw_input(["What would you like your image query to be?"])
+    searchQuery=input(["What would you like your image query to be?"])
     print ("---------------------------------------------------------------------")
 
     if searchQuery=="":
@@ -942,7 +942,7 @@ def getImageUrlArrayNew(imageQueryLog):
     searchQuery=''.join(searchQuery.strip(' ').split(' '))
 
 ##    print "---------------------------------------------------------------------"
-##    imgColorType=raw_input(["The default color type is 'color'. Others will become available."])
+##    imgColorType=input(["The default color type is 'color'. Others will become available."])
 ##    print "---------------------------------------------------------------------"
 
     imgColorType='color'
