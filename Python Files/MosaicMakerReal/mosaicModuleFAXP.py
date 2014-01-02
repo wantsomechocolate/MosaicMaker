@@ -14,15 +14,17 @@
 ## All of the necessary imports
 import os, sys
 import ast, numbers
-import Tkinter, tkFileDialog
-import json, urllib, urllib2, cStringIO
+import tkinter #, tkFileDialog
+from tkinter.filedialog import askdirectory
+import json, urllib   #, urllib2, cStringIO
 import shutil, time, random
 
 import math as op
 import numpy as np
 
 from PIL import Image
-from markup_1_8 import markup   ## ***From http://markup.sourceforge.net/
+#from markup_1_8 import markup   ## ***From http://markup.sourceforge.net/
+from markup_1_9 import markup   ## ***From http://markup.sourceforge.net/
 from marbles import glass as chan
 
 ##  This is the program "shell" Everything runs from here. 
@@ -200,11 +202,11 @@ def getProgramDirectory(mainDir,progDataLog):
         print ("Please navigate to the directory you would like Mosaic Maker to save to.")
         print ("If this directory exists already, just navigate to it's parent directory and press OK.")
         
-        root=Tkinter.Tk()                           ##  Explicitly call the root window so that you can...
+        root=tkinter.Tk()                           ##  Explicitly call the root window so that you can...
         root.withdraw()                             ##  withdraw it!
 
-        baseDirectory=tkFileDialog.askdirectory(focus=True)   ##  imageFile will store the filename of the image you choose
-        
+        #baseDirectory=tkFileDialog.askdirectory(focus=True)   ##  imageFile will store the filename of the image you choose
+        baseDirectory=tkinter.filedialog.askdirectory(focus=True)   ##  imageFile will store the filename of the image you choose
         root.destroy()                              ##  Some overkill
 
         progDir=baseDirectory+'/'+"Mosaic Maker"
@@ -633,7 +635,7 @@ def getUserSelectedQueries(fileContents, prompt):
         print (str(i+1)+": "),
         print (listOfQueries[i])
 
-    print "---------------------------------------------------------------------"
+    print ("---------------------------------------------------------------------")
     ##  There is no error checking here. 
     querySelection=raw_input([prompt])
     if querySelection=='':
@@ -834,9 +836,9 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
 
     imageFilename=imageFile[imageFile.rindex('/')+1:imageFile.rindex('.')]
     
-    print "---------------------------------------------------------------------"
+    print ("---------------------------------------------------------------------")
     destFileHTML=raw_input([str("Destination File for HTML Output?["+imageFilename+" Mosaic F"+str(fineness)+" HTML.html]")])
-    print "---------------------------------------------------------------------"
+    print ("---------------------------------------------------------------------")
 
     if destFileHTML=="":
         destFileHTML=imageFilename+" Mosaic F"+str(fineness)+" HTML.html"
@@ -849,9 +851,9 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     output=open(destFileHTML,'w')
     output.write(str(page))
     output.close()
-    print "---------------------------------------------------------------------"
-    print "The page "+destFileHTML+" was created"
-    print "---------------------------------------------------------------------"
+    print ("---------------------------------------------------------------------")
+    print ("The page "+destFileHTML+" was created")
+    print ("---------------------------------------------------------------------")
 
     cssFilename=createCSS(imageHeightWeb, imageWidthWeb)
     jsFilename=createJs()
@@ -923,9 +925,9 @@ def getImageUrlArrayNew(imageQueryLog):
     searchType="image"                                          ##  A critera for the urlopen call to limit search to images
     SEARCH_URL="https://www.googleapis.com/customsearch/v1"     ##  I made this a string just to make the code more readable?
 
-    print "---------------------------------------------------------------------"
+    print ("---------------------------------------------------------------------")
     searchQuery=raw_input(["What would you like your image query to be?"])
-    print "---------------------------------------------------------------------"
+    print ("---------------------------------------------------------------------")
 
     if searchQuery=="":
         searchQuery='mylittlepony'
@@ -1107,8 +1109,8 @@ def refreshUrlImageLists(imageQueryLog, fineness):
     
     for i in range(4,len(fileContents)):
         if fileContents[i-4][:7]=="Search:":
-            (print "---------------------------------------------------------------------")
-            (print "Refreshing the image list for "+fileContents[i-4][8:-1])
+            print ("---------------------------------------------------------------------")
+            print ("Refreshing the image list for "+fileContents[i-4][8:-1])
             aveRgbArrayWebRefresh=getAveRgbArrayWebNew(ast.literal_eval(fileContents[i-2][:-1]), fineness)
             tempFile.write(str(aveRgbArrayWebRefresh))
             tempFile.write('\n')
