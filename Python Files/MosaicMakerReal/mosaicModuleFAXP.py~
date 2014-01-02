@@ -28,25 +28,25 @@ from marbles import glass as chan
 ##  This is the program "shell" Everything runs from here. 
 def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
 
-    print ("    -----------           MAIN MENU              -------------")
-    print ("--------------------------------------------------------------------------------------")
-    print ("    -----------   Choose one of the following:   -------------")
-    print ("    -----------     [1] Make a mosaic            -------------")
-    print ("    -----------     [2] Do a new search          -------------")
-    print ("    -----------     [3] Print Searches           -------------")
-    print ("    -----------     [4] Refresh                  -------------")
-    print ("    -----------     [5] Change Fineness ["+str(fineness)+"]      -------------")
-    print ("    -----------     [6] Quit :(                  -------------")
-    print ("--------------------------------------------------------------------------------------")
+    print "    -----------           MAIN MENU              -------------"
+    print "--------------------------------------------------------------------------------------"
+    print "    -----------   Choose one of the following:   -------------"
+    print "    -----------     [1] Make a mosaic            -------------"
+    print "    -----------     [2] Do a new search          -------------"
+    print "    -----------     [3] Print Searches           -------------"
+    print "    -----------     [4] Refresh                  -------------"
+    print "    -----------     [5] Change Fineness ["+str(fineness)+"]      -------------"
+    print "    -----------     [6] Quit :(                  -------------"
+    print "--------------------------------------------------------------------------------------"
     
     promptString="    ----    Please make a selection[1]    "
 
     choice=getIntegerInput(1, 6, promptString, 1) # This goes (start, end, promptString, default)
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
     
     if choice==1:
         
-        print ("You picked choice one")  #To make a mosaic
+        print "You picked choice one"  #To make a mosaic
 
         imageFile=getBaseImage(progDir,mainDir)     ## Use askopen file dialog to get base image
 
@@ -78,7 +78,7 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         filename=imageQueryLog
         fileContents=getFileContents(filename)
 
-        print ("---------------------------------------------------------------------")
+        print "---------------------------------------------------------------------"
         prompt="Choose queries from list using comma separated integers. [All]"
         userSelectedQueries=getUserSelectedQueries(fileContents,prompt)
         returnedArray=getImgUrl_and_aveRgbArrayWeb_forSelection(userSelectedQueries, imageQueryLog)
@@ -86,23 +86,23 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         imageUrlArray=returnedArray[0]
         aveRgbArrayWeb=returnedArray[1]
 
-        print ("Entering output URL")
+        print "Entering output URL"
         entTime=time.time()
         outputUrlList=getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness)
 
         ### Added 12/13/2013
-        print ("Looking through images to find best matches for image section")
+        print "Looking through images to find best matches for image section"
         outputUrlSet = set(outputUrlList)
-        print ("There are "+str(len(outputUrlSet))+" unique images in this mosaic")
-        print ("Filling "+str(int(height/pixelHeight)*int(width/pixelWidth))+" possible spots")
+        print "There are "+str(len(outputUrlSet))+" unique images in this mosaic"
+        print "Filling "+str(int(height/pixelHeight)*int(width/pixelWidth))+" possible spots"
         ### Added 12/13/2013
         
         exiTime=time.time()
-        print ("Exited output URL")
+        print "Exited output URL"
         diff=exiTime-entTime
         minutes=op.floor(diff/60)
         seconds=int(diff-minutes*60)
-        print ("That took "+str(minutes)+" minutes and "+str(seconds)+" seconds!")
+        print "That took "+str(minutes)+" minutes and "+str(seconds)+" seconds!"
         
         mosaicDisplayWidth=800
         cssFile='mosaicStyle.css' 
@@ -114,7 +114,7 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         
     elif choice==2:  # To do a new search
         
-        print ("You picked choice 2")
+        print "You picked choice 2"
         
         imageUrlArray=getImageUrlArrayNew(imageQueryLog)
         
@@ -126,41 +126,41 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
 
     elif choice==3:  #To print the possible searches to select
 
-        print ("You picked choice 3")
-        print ("---------------------------------------------------------------------")
+        print "You picked choice 3"
+        print "---------------------------------------------------------------------"
         filename=imageQueryLog
         fileContents=getFileContents(filename)
-        prompt=("Please hit enter to continue [Enter]")
+        prompt="Please hit enter to continue [Enter]"
         userSelectedQueries=getUserSelectedQueries(fileContents,prompt)
         
         mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness)
     
     elif choice==4:  #To refresh the links and get rid of any bad ones from the possible selection pool
 
-        print ("You picked choice 4")
-        print ("---------------------------------------------------------------------")
+        print "You picked choice 4"
+        print "---------------------------------------------------------------------"
         
         refreshUrlImageLists(imageQueryLog,fineness)
 
         mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness)
 
     elif choice==5:  # To change the fineness
-        print ("You picked choice 5")
-        print ("--------------------------------------------------------------------------------------")
-        prompt= ("Pick a fineness ["+str(fineness)+"]")
+        print "You picked choice 5"
+        print "--------------------------------------------------------------------------------------"
+        prompt="Pick a fineness ["+str(fineness)+"]"
         fineness=getIntegerInput(1,4,prompt,2)
-        imageQueryLog=("savedImageQueriesF"+str(fineness)+".log")
+        imageQueryLog="savedImageQueriesF"+str(fineness)+".log"
 
         mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness)
 
-    else: print ("Bye!")  # This is obviously if you pick option 6. It exits this function and goes back to the main script and exits. 
+    else: print "Bye!"  # This is obviously if you pick option 6. It exits this function and goes back to the main script and exits. 
 
 
 ##  Perhaps this will be useful some day 
 def enterMosaic(mainDir, progDataLog):
-    print ("--------------------------------------------------------------------------------------")
-    print ("    ----------------------    WELCOME TO MOSAIC MAKER    -------------------------")
-    print ("--------------------------------------------------------------------------------------")
+    print "--------------------------------------------------------------------------------------"
+    print "    ----------------------    WELCOME TO MOSAIC MAKER    -------------------------"   
+    print "--------------------------------------------------------------------------------------"
     
     progDir=getProgramDirectory(mainDir,progDataLog)
 
@@ -175,8 +175,8 @@ def enterMosaic(mainDir, progDataLog):
 #directory and then adds "Mosaic Maker" to it and then returns that. 
 def getProgramDirectory(mainDir,progDataLog):
     try:
-        print ("    ----    Checking to see if "+progDataLog+" exists    ----")
-        print ("  -----------------------------------------------------------------")
+        print "    ----    Checking to see if "+progDataLog+" exists    ----"
+        print "  -----------------------------------------------------------------"
         progData=open(progDataLog,'r')
         fileContents=[]
         for item in progData:
@@ -184,21 +184,21 @@ def getProgramDirectory(mainDir,progDataLog):
         for i in range(len(fileContents)):
             if fileContents[i][:-1]=="Program Directory":
                 progDir=fileContents[i+1]
-                print ("    ----    Retrieved program directory:")
-                print ('            "'+progDir+'"')
-                print ("            from "+progDataLog+"    ----")
-                print ("  ---------------------------------------------------------------")
-                print ("    ----    Checking to see that the directory exists    ----")
-                print ("  ---------------------------------------------------------------")
+                print "    ----    Retrieved program directory:"
+                print '            "'+progDir+'"'
+                print "            from "+progDataLog+"    ----"
+                print "  ---------------------------------------------------------------"
+                print "    ----    Checking to see that the directory exists    ----"
+                print "  ---------------------------------------------------------------"
                 os.chdir(progDir)
                 os.chdir(mainDir)
         progData.close()
-        print ("    ----    Program startup was successful    ----")
+        print "    ----    Program startup was successful    ----"
 
     except:
-        print ("You are either running this program for the first time or you did something it didn't like")
-        print ("Please navigate to the directory you would like Mosaic Maker to save to.")
-        print ("If this directory exists already, just navigate to it's parent directory and press OK.")
+        print "You are either running this program for the first time or you did something it didn't like"
+        print "Please navigate to the directory you would like Mosaic Maker to save to."
+        print "If this directory exists already, just navigate to it's parent directory and press OK."
         
         root=Tkinter.Tk()                           ##  Explicitly call the root window so that you can...
         root.withdraw()                             ##  withdraw it!
@@ -209,14 +209,14 @@ def getProgramDirectory(mainDir,progDataLog):
 
         progDir=baseDirectory+'/'+"Mosaic Maker"
 
-        print ("Creating/Rewriting "+progDataLog+".")
+        print "Creating/Rewriting "+progDataLog+"."
         progData=open(progDataLog,'w')
         progData.write("Program Directory")
         progData.write("\n")
         progData.write(progDir)
         progData.close()
 
-        print ("Creating/Locating "+progDir+".")
+        print "Creating/Locating "+progDir+"."
 
         try:
             os.mkdir(progDir)
@@ -229,9 +229,9 @@ def getProgramDirectory(mainDir,progDataLog):
 
         os.chdir(mainDir)
         
-        print ("    ----    Program startup was successful    ----")
+        print "    ----    Program startup was successful    ----"
 
-    print ("  ---------------------------------------------------------------")
+    print "  ---------------------------------------------------------------"
     return progDir
 
 
@@ -248,14 +248,14 @@ def getIntegerInput(start, end, promptString, default):
         try:
             userSelection=int(userSelection)
             if userSelection<start:
-                print ("Option Doesn't Exist.")
+                print "Option Doesn't Exist."
             elif userSelection>end:
-                print ("Option Doesn't Exist.")
+                print "Option Doesn't Exist."
             else:
                 flag="GOOD"
             
         except:
-            print ("Please enter an integer.")
+            print "Please enter an integer."
 
     return userSelection
 
@@ -271,9 +271,9 @@ def getFileContents(filename):
 def getBaseImage(progDir, mainDir):
     os.chdir(progDir)
     
-    print ("---------------------------------------------------------------------")
-    print ("Opening the open file dialog window")
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
+    print "Opening the open file dialog window"
+    print "---------------------------------------------------------------------"
 
     root=Tkinter.Tk()                           ##  Explicitly call the root windows so that you can...
     root.withdraw()                             ##  withdraw it!
@@ -290,14 +290,14 @@ def saveImageCopy(imCopy, imageFile, progDir, mainDir):
     imageFilename=imageFile[imageFile.rindex('/')+1:imageFile.rindex('.')]
     imageFileExtension=imageFile[imageFile.rindex('.'):]
 
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
     newFilename=raw_input([str("Name of copy of image to store with html:["+imageFilename+".png]")])
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
     
     if newFilename=="":
         newFilename=imageFilename
 
-    print ("Checking to see if "+newFilename+" exists.")
+    print "Checking to see if "+newFilename+" exists."
 
     fileDir=progDir+'/'+newFilename
     try:
@@ -305,19 +305,19 @@ def saveImageCopy(imCopy, imageFile, progDir, mainDir):
     except:
         os.mkdir(fileDir)
         os.chdir(fileDir)
-        print (fileDir+" was created.")
+        print fileDir+" was created."
 
     fileExisted="NO"
     for item in os.listdir(os.getcwd()):
         if item[:item.rindex('.')]==newFilename:
-            print ("File existed - no Copy made")
+            print "File existed - no Copy made"
             fileExisted="YES"
     if fileExisted=="NO":
         try:
             imCopy.save(newFilename+".png")
-            print ("Copy of "+newFilename+" was made.")
+            print "Copy of "+newFilename+" was made."
         except:
-            print ("There was a problem copying the image.")
+            print "There was a problem copying the image."
     else: pass
 
     os.chdir(mainDir)
@@ -325,9 +325,9 @@ def saveImageCopy(imCopy, imageFile, progDir, mainDir):
 
 
 def openImageReturnCopy(imageFile):
-    print ("---------------------------------------------------------------------")
-    print ("Please wait while the image data is loaded.")
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
+    print "Please wait while the image data is loaded."
+    print "---------------------------------------------------------------------"
 
     im = Image.open(imageFile)                  ##  im only has data about the file - no pixel data
     imCopy=im.copy()                            ##  Make a copy of the image so that you can't fuck anything up
@@ -336,9 +336,9 @@ def openImageReturnCopy(imageFile):
 
 
 def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
-    print ("---------------------------------------------------------------------")
-    print ("Please wait, the image is being analyzed")
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
+    print "Please wait, the image is being analyzed"
+    print "---------------------------------------------------------------------"
     aveR,aveG,aveB=0,0,0        ##  I'm currently just averaging RBG to get the overall color of each section
     r,g,b=0,1,2                 ##  The pixel data is accessed with the rgb values of 0,1,2 respectively 
     aveRgbArray=[]              ##  Initializing a list. 
@@ -382,20 +382,20 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
 
         subHeight=int(pixelHeight/fineness)                 ## .1*100/2=5
         subWidth=int(pixelWidth/fineness)                   ## .1*200/2=10
-        print ("SubHeight="+str(subHeight))                   
-        print ("SubWidth="+str(subWidth))
+        print "SubHeight="+str(subHeight)                   
+        print "SubWidth="+str(subWidth)
 
         heightSections=int(height/pixelHeight)              ## 100/10 = 10
         widthSections=int(width/pixelWidth)                 ## 200/20 = 10  These should equal the percentage chosen (10%)
-        print ("HeightSections="+str(heightSections))
-        print ("WidthSections="+str(widthSections))
+        print "HeightSections="+str(heightSections)
+        print "WidthSections="+str(widthSections)
         
         #subHeightSections=int(pixelHeight/subHeight)     
         #subWidthSections=int(pixelWidth/subWidth)
         subHeightSections=fineness                          ## =2
         subWidthSections=fineness                           ## =2
-        print ("SubHeightSections="+str(subHeightSections))
-        print ("SubWidthSections="+str(subWidthSections))
+        print "SubHeightSections="+str(subHeightSections)
+        print "SubWidthSections="+str(subWidthSections)
 
         ##  This goes across the image one row at a time and does it's thing
         ##  I tell it how many times to go across by calculating the floor of the width divided by the subsection width
@@ -464,9 +464,9 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
 
 
 def getAveRgbArraySquare(width, height, pixelWidth, pixelHeight, pix, fineness):
-    print ("---------------------------------------------------------------------")
-    print ("Please wait, the image is being analyzed")
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
+    print "Please wait, the image is being analyzed"
+    print "---------------------------------------------------------------------"
 
     ## Initialize the variables that will store rbg data about each section
     aveR,aveG,aveB=0,0,0
@@ -529,20 +529,20 @@ def getAveRgbArraySquare(width, height, pixelWidth, pixelHeight, pix, fineness):
 
         subHeight=int(pixelHeight/fineness)                 ## .1*100/2=5
         subWidth=int(pixelWidth/fineness)                   ## .1*200/2=10
-        print ("SubHeight="+str(subHeight))                  
-        print ("SubWidth="+str(subWidth))
+        print "SubHeight="+str(subHeight)                   
+        print "SubWidth="+str(subWidth)
 
         heightSections=int(height/pixelHeight)              ## 100/10 = 10
         widthSections=int(width/pixelWidth)                 ## 200/20 = 10  These should equal the percentage chosen (10%)
-        print ("HeightSections="+str(heightSections))
-        print ("WidthSections="+str(widthSections))
+        print "HeightSections="+str(heightSections)
+        print "WidthSections="+str(widthSections)
         
         #subHeightSections=int(pixelHeight/subHeight)     
         #subWidthSections=int(pixelWidth/subWidth)
         subHeightSections=fineness                          ## =2
         subWidthSections=fineness                           ## =2
-        print ("SubHeightSections="+str(subHeightSections))
-        print ("SubWidthSections="+str(subWidthSections))
+        print "SubHeightSections="+str(subHeightSections)
+        print "SubWidthSections="+str(subWidthSections)
 
         ##  This goes across the image one row at a time and does it's thing
         ##  I tell it how many times to go across by calculating the floor of the width divided by the subsection width
@@ -616,9 +616,9 @@ def getPercentOfPic():
     end=5
     promptString="Percent of original size for mosaic images(1-5): (Percent)[2%]"
     default=2
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
     choice=getIntegerInput(start,end,promptString,default)
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
     percentOfPic=choice/100.0
     return percentOfPic                         ##  Returns a float
 
@@ -628,10 +628,10 @@ def getUserSelectedQueries(fileContents, prompt):
         if item[:7]=="Search:":
             listOfQueries.append(item[8:-1])
 
-    print ('0: All Items')
+    print '0: All Items'
     for i in range(len(listOfQueries)):
-        print (str(i+1)+": "),
-        print (listOfQueries[i])
+        print str(i+1)+": ",
+        print listOfQueries[i]
 
     print "---------------------------------------------------------------------"
     ##  There is no error checking here. 
@@ -683,15 +683,15 @@ def getImgUrl_and_aveRgbArrayWeb_forSelection(selection, imageQueryLog):
     returnedArray.append(imageUrlArray)
     returnedArray.append(aveRgbArrayWeb)
 
-    print ("---------------------------------------------------------------------")
-    print ("You are using search queries: "),
+    print "---------------------------------------------------------------------"
+    print "You are using search queries: ",
     for i in range(len(selection)):
         if i!=len(selection)-1:
-            print (str(selection[i])+', '),
+            print str(selection[i])+', ',
         else:
-            print ("and "+str(selection[i])+".")
-    print ("These searches include "+str(len(imageUrlArray))+" images.")
-    print ("---------------------------------------------------------------------")
+            print "and "+str(selection[i])+"."
+    print "These searches include "+str(len(imageUrlArray))+" images."
+    print "---------------------------------------------------------------------"
 
     return returnedArray
 
@@ -948,9 +948,9 @@ def getImageUrlArrayNew(imageQueryLog):
     numberOfResults=100
 
 
-    print ("---------------------------------------------------------------------")
-    print ("Please wait while the images are retrieved.")
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
+    print "Please wait while the images are retrieved."
+    print "---------------------------------------------------------------------"
 
     startIndex=1
     imageUrlArray=[]                    ##  This will hold all the URLs for me
@@ -973,9 +973,9 @@ def getImageUrlArrayNew(imageQueryLog):
 
         startIndex=startIndex+10
 
-    print ("---------------------------------------------------------------------")
-    print ("The image Urls have been collected")
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
+    print "The image Urls have been collected"
+    print "---------------------------------------------------------------------"
 
     return imageUrlArray
 
@@ -983,9 +983,9 @@ def getAveRgbArrayWebNew(imageUrlArray, fineness):
 
     #fineness=2
 
-    print ("---------------------------------------------------------------------")
-    print ("Please wait while the URLs are tested")
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
+    print "Please wait while the URLs are tested"
+    print "---------------------------------------------------------------------"
 
     aveR,aveG,aveB=0,0,0                        ##  I'm currently just averaging RBG to get the overall color of each section
     wCount, hCount=0,0                          ##  Not really a good way of doing it.
@@ -1010,7 +1010,7 @@ def getAveRgbArrayWebNew(imageUrlArray, fineness):
             filename=cStringIO.StringIO(urllib.urlopen(item).read())
             img=Image.open(filename)
             if img.mode!="RGB":
-                print ("The image was not RGB")
+                print "The image was not RGB"
                 aveRgbArrayWeb.append(nonRgbArray)
                 
             else:
@@ -1046,11 +1046,11 @@ def getAveRgbArrayWebNew(imageUrlArray, fineness):
                 aveRgbArrayWeb.append(subRgbArrayWeb)
                 subRgbArrayWeb=[]
 
-                print ("File Loaded Successfully")
+                print "File Loaded Successfully"
 
         ## This is so no image that doesn't load will be chosen as a match. But the index of the image url isn't thrown off. 
         except:
-            print ("File did not Load Successfully")
+            print "File did not Load Successfully"
             aveRgbArrayWeb.append(defaultRgbArray)
 
     return aveRgbArrayWeb
@@ -1081,7 +1081,7 @@ def logNewResults(imageUrlArray,aveRgbArrayWeb, imageQueryLog):
 
     os.remove(sivTemp)
 
-    print ("Your new search has been added to "+savedImageFilename+".")
+    print "Your new search has been added to "+savedImageFilename+"."
 
 
 def refreshUrlImageLists(imageQueryLog, fineness):
@@ -1107,8 +1107,8 @@ def refreshUrlImageLists(imageQueryLog, fineness):
     
     for i in range(4,len(fileContents)):
         if fileContents[i-4][:7]=="Search:":
-            (print "---------------------------------------------------------------------")
-            (print "Refreshing the image list for "+fileContents[i-4][8:-1])
+            print "---------------------------------------------------------------------"
+            print "Refreshing the image list for "+fileContents[i-4][8:-1]
             aveRgbArrayWebRefresh=getAveRgbArrayWebNew(ast.literal_eval(fileContents[i-2][:-1]), fineness)
             tempFile.write(str(aveRgbArrayWebRefresh))
             tempFile.write('\n')
@@ -1122,7 +1122,7 @@ def refreshUrlImageLists(imageQueryLog, fineness):
     try:
         os.remove(sivTemp)
     except:
-        print ("File "+sivTemp+" could not be removed. Delete it yo damn self")
+        print "File "+sivTemp+" could not be removed. Delete it yo damn self"
     
 def printScreen():
     import win32api, win32con, ImageGrab
@@ -1138,6 +1138,6 @@ def openBrowser(dest):
     return result
     
 def exitMosaic():
-    print ("---------------------------------------------------------------------")
-    print ("You have exited the program successfully")
-    print ("---------------------------------------------------------------------")
+    print "---------------------------------------------------------------------"
+    print "You have exited the program successfully"
+    print "---------------------------------------------------------------------"
