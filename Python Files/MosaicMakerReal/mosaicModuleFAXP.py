@@ -53,6 +53,7 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         imageFile=getBaseImage(progDir,mainDir)     ## Use askopen file dialog to get base image
 
         imCopy=openImageReturnCopy(imageFile)       ##  I think this doesn't do what I want - too lazy to fix.
+        
         newFilename=saveImageCopy(imCopy,imageFile,progDir, mainDir)
         
         width=imCopy.size[0]                                    ##  Get width of image
