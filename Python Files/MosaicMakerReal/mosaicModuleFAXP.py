@@ -277,9 +277,9 @@ def getBaseImage(progDir, mainDir):
     print ("Opening the open file dialog window")
     print ("---------------------------------------------------------------------")
 
-    root=Tkinter.Tk()                           ##  Explicitly call the root windows so that you can...
+    root=tkinter.Tk()                           ##  Explicitly call the root windows so that you can...
     root.withdraw()                             ##  withdraw it!
-    imageFile=tkFileDialog.askopenfilename()    ##  imageFile will store the filename of the image you choose
+    imageFile=tkinter.filedialog.askopenfilename()    ##  imageFile will store the filename of the image you choose
     root.destroy()                              ##  Some overkill 
 
     os.chdir(mainDir)
