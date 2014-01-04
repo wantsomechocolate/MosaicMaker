@@ -16,7 +16,8 @@ import os, sys
 import ast, numbers
 import tkinter #, tkFileDialog
 from tkinter.filedialog import askdirectory
-import json, urllib   #, urllib2, cStringIO
+import json, urllib, io #cStringIO  #, urllib2, 
+from urllib import request
 import shutil, time, random
 
 import math as op
@@ -26,6 +27,7 @@ from PIL import Image
 #from markup_1_8 import markup   ## ***From http://markup.sourceforge.net/
 from markup_1_9 import markup   ## ***From http://markup.sourceforge.net/
 from marbles import glass as chan
+
 
 ##  This is the program "shell" Everything runs from here. 
 def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
@@ -55,6 +57,8 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         imCopy=openImageReturnCopy(imageFile)       ##  I think this doesn't do what I want - too lazy to fix.
         
         newFilename=saveImageCopy(imCopy,imageFile,progDir, mainDir)
+
+        newFilenameWithExt=newFilename+'.png'
         
         width=imCopy.size[0]                                    ##  Get width of image
         height=imCopy.size[1]                                   ##  Get height of image
@@ -111,7 +115,7 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         cssFile='mosaicStyle.css' 
         jsFile='mosaicScript.js'
 
-        filenameHTML=generateHTML(width,height,pixelWidth,pixelHeight,mosaicDisplayWidth,cssFile,outputUrlList,imageFile, progDir, mainDir,fineness,jsFile)
+        filenameHTML=generateHTML(width,height,pixelWidth,pixelHeight,mosaicDisplayWidth,cssFile,outputUrlList,newFilename, progDir, mainDir,fineness,jsFile)
    
         mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness)
         
@@ -452,20 +456,6 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def getAveRgbArraySquare(width, height, pixelWidth, pixelHeight, pix, fineness):
     print ("---------------------------------------------------------------------")
     print ("Please wait, the image is being analyzed")
@@ -598,22 +588,6 @@ def getAveRgbArraySquare(width, height, pixelWidth, pixelHeight, pix, fineness):
     return aveRgbArray
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def getPercentOfPic():
     start=1
     end=5
@@ -633,7 +607,7 @@ def getUserSelectedQueries(fileContents, prompt):
 
     print ('0: All Items')
     for i in range(len(listOfQueries)):
-        print (str(i+1)+": "),
+        print (str(i+1)+": ", end="")
         print (listOfQueries[i])
 
     print ("---------------------------------------------------------------------")
@@ -789,6 +763,7 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     ##  This makes the html for me and I can set inline css with the style attribute
     ##  I want to have all the css in the html so you don't have to float around that mosaic css thang
     ##  Eventually the image height and width will be determined other ways
+    print ("Image file: "+str(imageFile))
     
     mosaicDisplayWidth=800
     numberOfPics=width/pixelWidth
@@ -835,7 +810,8 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
 
     ##  Print html to an actual file so it can be viewed
 
-    imageFilename=imageFile[imageFile.rindex('/')+1:imageFile.rindex('.')]
+    #imageFilename=imageFile[imageFile.rindex('/')+1:imageFile.rindex('.')]
+    imageFilename=imageFile
     
     print ("---------------------------------------------------------------------")
     destFileHTML=input([str("Destination File for HTML Output?["+imageFilename+" Mosaic F"+str(fineness)+" HTML.html]")])
@@ -962,17 +938,26 @@ def getImageUrlArrayNew(imageQueryLog):
 
         try:
             ##  I got this line straight off the internet - and then made all the strings into variables and put my own stuff in. 
-            data = urllib2.urlopen(SEARCH_URL+'?'+'key='+MY_API_KEY+'&'+'cx='+SEARCH_ENGINE+'&'+'q='+searchQuery+'&'+'searchType='+searchType+'&start='+str(startIndex)+'&'+'imgColorType='+imgColorType)
+            data = request.urlopen(SEARCH_URL+'?'+'key='+MY_API_KEY+'&'+'cx='+SEARCH_ENGINE+'&'+'q='+searchQuery+'&'+'searchType='+searchType+'&start='+str(startIndex)+'&'+'imgColorType='+imgColorType)
 
         except:
-            data = urllib2.urlopen(SEARCH_URL+'?'+'key='+MY_API_KEY_2+'&'+'cx='+SEARCH_ENGINE+'&'+'q='+searchQuery+'&'+'searchType='+searchType+'&start='+str(startIndex)+'&'+'imgColorType='+imgColorType)
+            data = request.urlopen(SEARCH_URL+'?'+'key='+MY_API_KEY_2+'&'+'cx='+SEARCH_ENGINE+'&'+'q='+searchQuery+'&'+'searchType='+searchType+'&start='+str(startIndex)+'&'+'imgColorType='+imgColorType)
 
-        data = json.load(data)
+        #encoding = data.headers.get_content_charset()
+        
+        #data = json.loads(data.read().decode(encoding))
+
+        #data =json.load(data.decode('utf8'))
+
+        dataread = data.read()
+        
+        datajson = json.loads(dataread.decode("utf8"))
 
         ##  Manoj's Code - much better. 20 lines became 3
 
-        for item in data["items"]:
+        for item in datajson["items"]:
                 imageUrlArray.append(item["link"])
+                #print (item["link"])
 
         startIndex=startIndex+10
 
@@ -1010,8 +995,28 @@ def getAveRgbArrayWebNew(imageUrlArray, fineness):
 
     for item in imageUrlArray:
         try:
-            filename=cStringIO.StringIO(urllib.urlopen(item).read())
-            img=Image.open(filename)
+
+            #url = 'http://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Timba%2B1.jpg/220px-Timba%2B1.jpg'
+            user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/12.04 Chromium/18.0.1025.168 Chrome/18.0.1025.168 Safari/535.19'
+
+            #u = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': user_agent}))
+            #filename = request.urlopen(request.Request(item, headers={'User-Agent': user_agent}))
+
+            #filename = filename.read()
+            
+            #filename=io.StringIO(request.urlopen(item).read())
+
+            URL = item
+            u = urllib.request.urlopen(urllib.request.Request(URL, headers={'User-Agent': user_agent}))
+            image_file = io.BytesIO(u.read())
+            im = Image.open(image_file)
+            #print ("Image format: "+str(im.format))
+            #print ("Image mode: "+str(im.mode))
+            
+            #img=Image.open(filename)
+
+            img = im
+            
             if img.mode!="RGB":
                 print ("The image was not RGB")
                 aveRgbArrayWeb.append(nonRgbArray)
