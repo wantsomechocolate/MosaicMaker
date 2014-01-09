@@ -4,7 +4,7 @@
 import os, sys
 import ast, numbers, math as op
 import tkinter
-import json, urllib, io
+import json, urllib, io, urllib.request
 import shutil, time, random
 
 ## Using numpy 1.8.0
@@ -759,7 +759,8 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     print ("Image file: "+str(imageFile))
     
     mosaicDisplayWidth=800
-    numberOfPics=width/pixelWidth
+    numberOfPics=int(width/pixelWidth)
+    numberOfRows=int(height/pixelHeight)
 
     aspectRatio=float(width)/float(height)
 
@@ -770,8 +771,8 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     
 
     ##  This will also be determined a different way. 
-    imagesPerRow=numberOfPics
-    imagesPerColumn=numberOfPics
+    #imagesPerRow=numberOfPics
+    #imagesPerColumn=numberOfPics
 
     ##  The plus 30 is for 15px of padding on both sides of the mosaic
     imageContainerWidth=mosaicDisplayWidth+30
@@ -797,8 +798,23 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     page.div.close()
 
     ##  Make a div with all the images floating inside
-    page.div(Class = 'imageContainer', style='width:'+str(imageContainerWidth)+'; height:'+str(imageContainerHeight))
-    page.img( src=outputUrlList, alt=searchTerm ) #height=imageHeightWeb, width=imageWidthWeb, 
+    page.div(Class = 'imageDivContainer', style='width:'+str(imageContainerWidth)+'; height:'+str(imageContainerHeight))
+
+    for i in range(numberOfRows):
+
+        for j in range(numberOfPics):
+
+            if j==0:
+                page.div(Class = 'imageRow')
+
+            page.div(Class = 'imageDiv', style='background-image:'+str(outputUrlList[i*numberOfPics+j]))
+            page.div.close()
+
+            if j==numberOfPics-1:
+                page.div.close()
+                     
+    #page.div(Class = 'imageDivs', style='background-image:', 
+    #page.img( src=outputUrlList, alt=searchTerm ) #height=imageHeightWeb, width=imageWidthWeb, 
     page.div.close()
 
     ##  Print html to an actual file so it can be viewed
@@ -842,12 +858,14 @@ def createCSS(img_height, img_width):
         background:black;\n
         color:white;\n
     }\n
+    
     .header {\n
         border:2p solid black;\n
         background:orange;\n
         width:800px;\n
         margin:0 auto;\n
     }\n
+    
     .imageContainer {\n
         overflow:hidden;\n
         border:2p solid black;\n
@@ -855,12 +873,21 @@ def createCSS(img_height, img_width):
         margin:0 auto;\n
         padding:15px;\n
     }\n
-    img {\n
+    
+    imageRow {
+        
+    }\n
+    
+    imageDiv {\n
         float:left;\n
         padding:0px;\n
-        margin:0px;\n"""+
+        margin:0px;\n
+        background-size: cover;\n
+        background-repeat: no-repeat;\n
+        background-position: 50% 50%;\n"""+
         "width:"+str(img_width)+";\n"+
         "height:"+str(img_height)+";\n"+
+    
     """}\n""")
     
     mosaicStyle.close()
@@ -1096,52 +1123,71 @@ def getAveRgbArrayWebNew(imageUrlArray, fineness):
         defaultRgbArray.append(defaultRGB)
 
     for URL in imageUrlArray:
+
         try:
-
+            #print (1)
             user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/12.04 Chromium/18.0.1025.168 Chrome/18.0.1025.168 Safari/535.19'
-
+            #print (2)
             u = urllib.request.urlopen(urllib.request.Request(URL, headers={'User-Agent': user_agent}))
-            
+            #print (3)
             image_file = io.BytesIO(u.read())
-            
+            #print (4)
             img = Image.open(image_file)
-            
+            #print (5)
             if img.mode!="RGB":
-                print ("The image was not RGB")
+                #print ("The image was not RGB")
                 aveRgbArrayWeb.append(nonRgbArray)
-                
+                #print (6)
             else:
-
+                #print (7)
                 ## During the analysis here I would like to find the largest square from each image
                 ## at the center of the image and then analyze that image.
                 ## Should be easy. 
                 
                 webWidth, webHeight=img.size
-
+                #print (8)
                 newW=webWidth
+                #print (9)
                 newH=webHeight
+                #print (10)
 
                 if newW<=newH:
+                    #print (11)
                     newH=newW
+                    #print (12)
                     x1=0
+                    #print (13)
                     x2=newW
+                    #print (14)
                     y1=int((webHeight-newH)/2)
+                    #print (15)
                     y2=y1+newH
+                    #print (16)
                 else:
+                    #print (17)
                     newW=newH
+                    #print (18)
                     y1=0
+                    #print (19)
                     y2=newH
+                    #print (20)
                     x1=int((webWidth-newW)/2)
+                    #print (21)
                     x2=x1+newW
+                    #print (22)
 
                 img=img.crop([x1,y1,x2,y2])
+                #print (23)
 
                 
 
                 subWebWidth=int(newW/fineness)
+                #print (24)
                 subWebHeight=int(newH/fineness)
+                #print (25)
                 
                 pixels=img.load()
+                #print (26)
 
                 for ws in range(fineness):
                     for hs in range(fineness):
