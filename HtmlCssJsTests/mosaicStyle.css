@@ -1,0 +1,54 @@
+* {box-sizing:border-box;}
+
+    body {
+
+        background:black;
+
+        color:white;
+
+    }
+
+    .header {
+
+        border:2p solid black;
+
+        background:orange;
+
+        width:800px;
+
+        margin:0 auto;
+
+    }
+
+    .imageContainer {
+
+        overflor:hidden;
+
+        border:2p solid black;
+
+        background:orange;
+
+        margin:0 auto;
+
+        padding:15px;
+
+    }
+
+    img {
+
+        float:left;
+
+        padding:0px;
+
+        margin:0px;
+
+	width:15.789473684210527;
+
+	height:15.789473684210527;
+
+    }
+
+
+
+
+

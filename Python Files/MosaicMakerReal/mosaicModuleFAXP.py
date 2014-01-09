@@ -1,33 +1,26 @@
-#!/usr/bin/python
-# Filename: mosaicModuleFAXP.py
 
-## This file contains about 90% of the code. I think I should break it into peices.
-## This currently only works for color images :(
-## There is also a problem with choosing a different percent of image. I need to start
-## writing tests for my code
 
-## Ask use what is more important, color or composition or both.
-## JUST CHANGE THE WAY YOU FIND PIXEL HIEGHT AND PIXEL WITH AND THE NECESSITY OF USING THE
-## SAME ASPECT RATIO IS GONE ON THE BASE IMAGE SIDE
-## STILL HAVE TO LOOK INTO THE WEB IMAGE SIDE.
-
-## All of the necessary imports
+## Packages shipped with python3
 import os, sys
-import ast, numbers
-import tkinter #, tkFileDialog
-from tkinter.filedialog import askdirectory
-import json, urllib, io #cStringIO  #, urllib2, 
-from urllib import request
+import ast, numbers, math as op
+import tkinter
+import json, urllib, io
 import shutil, time, random
 
-import math as op
+## Using numpy 1.8.0
 import numpy as np
 
+## Using Pillow 2.3.0
 from PIL import Image
-#from markup_1_8 import markup   ## ***From http://markup.sourceforge.net/
+
+## Using Markup 1.9. It was not installed with pip, just pasted into the site-packages dir in venv
 from markup_1_9 import markup   ## ***From http://markup.sourceforge.net/
+
+## This is some code I had as a global site-package on an old machine containing stuff I used often. 
 from marbles import glass as chan
 
+#from tkinter.filedialog import askdirectory
+#from urllib import request
 
 ##  This is the program "shell" Everything runs from here. 
 def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
@@ -789,7 +782,7 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     altText=searchTerm
 
     ##  Just some header type stuff
-    paras = ( "Here is your mosaic!" )
+    paras = ( "Here is your mosaic! "+imageFile )
 
     ##  Initialize the page
     page = markup.page( )
@@ -856,7 +849,7 @@ def createCSS(img_height, img_width):
         margin:0 auto;\n
     }\n
     .imageContainer {\n
-        overflor:hidden;\n
+        overflow:hidden;\n
         border:2p solid black;\n
         background:orange;\n
         margin:0 auto;\n
@@ -866,8 +859,8 @@ def createCSS(img_height, img_width):
         float:left;\n
         padding:0px;\n
         margin:0px;\n"""+
-        "width:"+str(img_width)+";"+
-        "height:"+str(img_height)+";"+
+        "width:"+str(img_width)+";\n"+
+        "height:"+str(img_height)+";\n"+
     """}\n""")
     
     mosaicStyle.close()
@@ -967,7 +960,7 @@ def getImageUrlArrayNew(imageQueryLog):
 
     return imageUrlArray
 
-def getAveRgbArrayWebNew(imageUrlArray, fineness):
+def getAveRgbArrayWebNew_01_08_14(imageUrlArray, fineness):
 
     #fineness=2
 
@@ -1062,6 +1055,135 @@ def getAveRgbArrayWebNew(imageUrlArray, fineness):
             aveRgbArrayWeb.append(defaultRgbArray)
 
     return aveRgbArrayWeb
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def getAveRgbArrayWebNew(imageUrlArray, fineness):
+
+    #fineness=2
+
+    print ("---------------------------------------------------------------------")
+    print ("Please wait while the URLs are tested")
+    print ("---------------------------------------------------------------------")
+
+    aveR,aveG,aveB=0,0,0                        ##  I'm currently just averaging RBG to get the overall color of each section
+    wCount, hCount=0,0                          ##  Not really a good way of doing it.
+    r,g,b=0,1,2
+
+    aveRgbArrayWeb=[]
+    
+    nonRgbArray=[]
+    defaultRgbArray=[]
+    
+    subRgbArrayWeb=[]
+    
+    nonRGB=(-501,-501,-501)
+    defaultRGB=(-500,-500,-500)
+
+    for i in range(fineness*fineness):
+        nonRgbArray.append(nonRGB)
+        defaultRgbArray.append(defaultRGB)
+
+    for URL in imageUrlArray:
+        try:
+
+            user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/12.04 Chromium/18.0.1025.168 Chrome/18.0.1025.168 Safari/535.19'
+
+            u = urllib.request.urlopen(urllib.request.Request(URL, headers={'User-Agent': user_agent}))
+            
+            image_file = io.BytesIO(u.read())
+            
+            img = Image.open(image_file)
+            
+            if img.mode!="RGB":
+                print ("The image was not RGB")
+                aveRgbArrayWeb.append(nonRgbArray)
+                
+            else:
+
+                ## During the analysis here I would like to find the largest square from each image
+                ## at the center of the image and then analyze that image.
+                ## Should be easy. 
+                
+                webWidth, webHeight=img.size
+
+                newW=webWidth
+                newH=webHeight
+
+                if newW<=newH:
+                    newH=newW
+                    x1=0
+                    x2=newW
+                    y1=int((webHeight-newH)/2)
+                    y2=y1+newH
+                else:
+                    newW=newH
+                    y1=0
+                    y2=newH
+                    x1=int((webWidth-newW)/2)
+                    x2=x1+newW
+
+                img=img.crop([x1,y1,x2,y2])
+
+                
+
+                subWebWidth=int(newW/fineness)
+                subWebHeight=int(newH/fineness)
+                
+                pixels=img.load()
+
+                for ws in range(fineness):
+                    for hs in range(fineness):
+                        
+                        for sw in range(subWebWidth):
+
+                            for sh in range(subWebHeight):
+
+                                aveR+=pixels[sw+subWebWidth*ws,sh+subWebHeight*hs][r]
+                                aveG+=pixels[sw+subWebWidth*ws,sh+subWebHeight*hs][g]
+                                aveB+=pixels[sw+subWebWidth*ws,sh+subWebHeight*hs][b]
+
+                        aveR=int(round(aveR/(subWebWidth*subWebHeight)))
+                        aveG=int(round(aveG/(subWebWidth*subWebHeight)))
+                        aveB=int(round(aveB/(subWebWidth*subWebHeight)))
+
+                        subRGBWeb=(aveR,aveG,aveB)
+
+                        subRgbArrayWeb.append(subRGBWeb)
+                        #print subRgbArrayWeb
+                        aveR,aveG,aveB=0,0,0
+
+                aveRgbArrayWeb.append(subRgbArrayWeb)
+                subRgbArrayWeb=[]
+
+                print ("File Loaded Successfully")
+
+        ## This is so no image that doesn't load will be chosen as a match. But the index of the image url isn't thrown off. 
+        except:
+            print ("File did not Load Successfully")
+            aveRgbArrayWeb.append(defaultRgbArray)
+
+    return aveRgbArrayWeb
+
+
+
+
+
+
+
+
+
 
 
 def logNewResults(imageUrlArray,aveRgbArrayWeb, imageQueryLog):

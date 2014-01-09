@@ -1,3 +1,9 @@
+## How should refreshing be done? Currently the search is not rerun,
+## So the links are tested for connection, but the pool of images
+## will shrink over time.
+
+## I really need to revisit the whole google api thing. 
+
 
 import os
 import mosaicModuleFAXP as mosaicModule    ##  My Module
@@ -5,7 +11,7 @@ import mosaicModuleFAXP as mosaicModule    ##  My Module
 ## There is a bug when you try to actually pick a different name for the image you select
 ##  Preliminary stuff 
 
-defaultFineness=2
+defaultFineness=4
 
 mainDir=os.getcwd()                                            ##  Get directory that program is run from.
 
