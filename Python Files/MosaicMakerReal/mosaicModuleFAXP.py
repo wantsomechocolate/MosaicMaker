@@ -1,5 +1,4 @@
 
-
 ## Packages shipped with python3
 import os, sys
 import ast, numbers, math as op
@@ -807,7 +806,7 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
             if j==0:
                 page.div(Class = 'imageRow')
 
-            page.div(Class = 'imageDiv', style='background-image:'+str(outputUrlList[i*numberOfPics+j]))
+            page.div(Class = 'imageDiv', style='background-image:url('+str(outputUrlList[i*numberOfPics+j])+')')
             page.div.close()
 
             if j==numberOfPics-1:
@@ -866,27 +865,42 @@ def createCSS(img_height, img_width):
         margin:0 auto;\n
     }\n
     
-    .imageContainer {\n
+    .imageDivContainer {\n
         overflow:hidden;\n
-        border:2p solid black;\n
+        border:2px solid black;\n
         background:orange;\n
         margin:0 auto;\n
         padding:15px;\n
     }\n
     
-    imageRow {
+    .imageRow {
+
+	position:relative;\n
+        display:inline-block;\n
+	width:100%;\n
+	background-color:orange;\n
+	padding:0px;\n
+	margin:0px;\n
         
     }\n
     
-    imageDiv {\n
-        float:left;\n
+    .imageDiv {\n
+    
+        display:inline-block;\n
+
         padding:0px;\n
-        margin:0px;\n
+
+        margin:-2px;\n
+
         background-size: cover;\n
+
         background-repeat: no-repeat;\n
+
         background-position: 50% 50%;\n"""+
-        "width:"+str(img_width)+";\n"+
-        "height:"+str(img_height)+";\n"+
+    
+        "width:"+str(int(img_width))+";\n"+
+    
+        "height:"+str(int(img_height))+";\n"+
     
     """}\n""")
     
