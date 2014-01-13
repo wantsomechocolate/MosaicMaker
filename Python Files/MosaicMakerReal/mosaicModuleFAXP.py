@@ -1314,18 +1314,18 @@ def refreshUrlImageLists(imageQueryLog, fineness):
     except:
         print ("File "+sivTemp+" could not be removed. Delete it yo damn self")
     
-def printScreen():
-    import win32api, win32con, ImageGrab
-    win32api.keybd_event(win32con.VK_SNAPSHOT, 0) #use 1 for only the active window 0 for whole screen
-    im = ImageGrab.grabclipboard()
-    im.save("screenshot.jpg", "JPEG")
+##def printScreen():
+##    import win32api, win32con, ImageGrab
+##    win32api.keybd_event(win32con.VK_SNAPSHOT, 0) #use 1 for only the active window 0 for whole screen
+##    im = ImageGrab.grabclipboard()
+##    im.save("screenshot.jpg", "JPEG")
 
-def openBrowser(dest):
-    import webbrowser
-    new = 2
-    url=dest
-    result=webbrowser.open(url,new=new)
-    return result
+##def openBrowser(dest):
+##    import webbrowser
+##    new = 2
+##    url=dest
+##    result=webbrowser.open(url,new=new)
+##    return result
     
 def exitMosaic():
     print ("---------------------------------------------------------------------")
