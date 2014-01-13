@@ -1,7 +1,7 @@
 
 ## Packages shipped with python3
 import os, sys
-import ast, numbers, math as op
+import ast, numbers, math
 import tkinter
 import json, urllib, io, urllib.request
 import shutil, time, random
@@ -24,6 +24,7 @@ from marbles import glass as chan
 ##  This is the program "shell" Everything runs from here. 
 def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
 
+    # This blob of text should be somewhere else!
     print ("    -----------           MAIN MENU              -------------")
     print ("--------------------------------------------------------------------------------------")
     print ("    -----------   Choose one of the following:   -------------")
@@ -37,17 +38,24 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
     
     promptString="    ----    Please make a selection[1]    "
 
-    choice=getIntegerInput(1, 6, promptString, 1) # This goes (start, end, promptString, default)
+    # This goes (start, end, promptString, default)
+    choice=getIntegerInput(1, 6, promptString, 1)
     print ("---------------------------------------------------------------------")
-    
+
+    #To make a mosaic
     if choice==1:
         
-        print ("You picked choice one")  #To make a mosaic
+        print ("You picked choice one")  
 
-        imageFile=getBaseImage(progDir,mainDir)     ## Use askopen file dialog to get base image
+        # Use askopenfile dialog to get base image. Changes to the directory where mosaics are
+        # stored invokes the dialog, then changes back to directory the program was run from.
+        imageFile=getBaseImage(progDir,mainDir)     
 
-        imCopy=openImageReturnCopy(imageFile)       ##  I think this doesn't do what I want - too lazy to fix.
-        
+        # Opens the image @imageFile, calls .copy() on it and then returns the image object for the copy.
+        # Not sure if that creates a legit copy, but it works for now.
+        imCopy=openImageReturnCopy(imageFile)       
+
+        #
         newFilename=saveImageCopy(imCopy,imageFile,progDir, mainDir)
 
         newFilenameWithExt=newFilename+'.png'
@@ -63,14 +71,14 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         percentOfPic=getPercentOfPic()             
 
         if width<=height:
-            pixelWidth=op.floor(width*percentOfPic)
+            pixelWidth=math.floor(width*percentOfPic)
             pixelHeight=pixelWidth
         else:
-            pixelHeight=op.floor(width*percentOfPic)
+            pixelHeight=math.floor(width*percentOfPic)
             pixelWidth=pixelHeight
 
-        #pixelHeight=op.floor(height*percentOfPic)               ##  Height of each section
-        #pixelWidth=op.floor(width*percentOfPic)                 ##  Width of each section
+        #pixelHeight=math.floor(height*percentOfPic)               ##  Height of each section
+        #pixelWidth=math.floor(width*percentOfPic)                 ##  Width of each section
         
         aveRgbArray=getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness)
         
@@ -99,7 +107,7 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         exiTime=time.time()
         print ("Exited output URL")
         diff=exiTime-entTime
-        minutes=op.floor(diff/60)
+        minutes=math.floor(diff/60)
         seconds=int(diff-minutes*60)
         print ("That took "+str(minutes)+" minutes and "+str(seconds)+" seconds!")
         
@@ -268,27 +276,42 @@ def getFileContents(filename):
 
 
 def getBaseImage(progDir, mainDir):
+
+    # Operate inside the program directory - the directory where the mosaics are saved.
     os.chdir(progDir)
     
     print ("---------------------------------------------------------------------")
     print ("Opening the open file dialog window")
     print ("---------------------------------------------------------------------")
 
-    root=tkinter.Tk()                           ##  Explicitly call the root windows so that you can...
-    root.withdraw()                             ##  withdraw it!
-    imageFile=tkinter.filedialog.askopenfilename()    ##  imageFile will store the filename of the image you choose
-    root.destroy()                              ##  Some overkill 
+    ##  Explicitly call the root windows so that you can...
+    root=tkinter.Tk()
+    ##  withdraw it!
+    root.withdraw()
+    ##  imageFile will store the filename of the image you choose
+    imageFile=tkinter.filedialog.askopenfilename()
+    ##  Search and
+    root.destroy()                              
 
+    ## Change the directory back to the directory that the program was run from.
     os.chdir(mainDir)
+    
+    ##  Returns a string
+    return imageFile                            
 
-    return imageFile                            ##  Returns a string
-
-## Something happens to this function when the user actually tries to change the filename. FIGURE IT OUT!
+## imCopy is an image object, imageFile is the name of the original, fullpath)
 def saveImageCopy(imCopy, imageFile, progDir, mainDir):
     os.chdir(progDir)
-    imageFilename=imageFile[imageFile.rindex('/')+1:imageFile.rindex('.')]
+
+    # Get JUST the filename without extension
+    imageFilename=os.path.basename(imageFile)
+    imageFilename=imageFilename[:imageFilename.rindex('.')]
+    #imageFilename=imageFile[imageFile.rindex('/')+1:imageFile.rindex('.')]
+
+    # Get JUST the extension
     imageFileExtension=imageFile[imageFile.rindex('.'):]
 
+    
     print ("---------------------------------------------------------------------")
     newFilename=input([str("Name of copy of image to store with html:["+imageFilename+".png]")])
     print ("---------------------------------------------------------------------")
@@ -328,10 +351,14 @@ def openImageReturnCopy(imageFile):
     print ("Please wait while the image data is loaded.")
     print ("---------------------------------------------------------------------")
 
-    im = Image.open(imageFile)                  ##  im only has data about the file - no pixel data
-    imCopy=im.copy()                            ##  Make a copy of the image so that you can't fuck anything up
+    ##  im only has data about the file - no pixel data
+    im = Image.open(imageFile)
 
-    return imCopy                               ##  Returns a image object
+    ##  Make a copy of the image so that you can't mess anything up
+    imCopy=im.copy()                            
+
+    ##  Returns an image object
+    return imCopy                               
 
 
 def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
@@ -345,9 +372,9 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
     if fineness==1:
         wCount, hCount=0,0          ##  Not really a good way of doing it, I saw a dude who did the RMS - maybe I'll try that.
 
-        while hCount<int(op.floor(height/pixelHeight)):         ##  I.E. image is 100px high, percentOfPic is 0.1 -> hCount will reach 10 or something
+        while hCount<int(math.floor(height/pixelHeight)):         ##  I.E. image is 100px high, percentOfPic is 0.1 -> hCount will reach 10 or something
             wCount=0                                            ##  Re-initilize wCount for new row of sections
-            while wCount<int(op.floor(width/pixelWidth)):       ##  Same as outer while loop, but for the width
+            while wCount<int(math.floor(width/pixelWidth)):       ##  Same as outer while loop, but for the width
                 
                 ##  For a given section this adds up all the pixel's RGB values and then averages them and puts them in a list
                 
@@ -371,8 +398,8 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
     ## Example: 100px by 200 px
     ## Fineness = 2
     ## Pixel width and Pixel height were chosen to be 10% They are calculated like so...
-    ##  pixelHeight=op.floor(height*percentOfPic)               ##  Height of each section
-    ##  pixelWidth=op.floor(width*percentOfPic)                 ##  Width of each section
+    ##  pixelHeight=math.floor(height*percentOfPic)               ##  Height of each section
+    ##  pixelWidth=math.floor(width*percentOfPic)                 ##  Width of each section
     ## Percent of pic is user chosen
 
     else:
@@ -477,9 +504,9 @@ def getAveRgbArraySquare(width, height, pixelWidth, pixelHeight, pix, fineness):
 
         ##  pixelHeight/Width is currently taken to be a percentage of the original image dimensions. So changing
         ##  those values will allow this function to step through a different number of boxes? I think so!
-        while hCount<int(op.floor(height/pixelHeight)):         
+        while hCount<int(math.floor(height/pixelHeight)):         
             wCount=0                                            ##  Re-initilize wCount for new row of sections
-            while wCount<int(op.floor(width/pixelWidth)):       ##  Same as outer while loop, but for the width
+            while wCount<int(math.floor(width/pixelWidth)):       ##  Same as outer while loop, but for the width
                 
                 ##  For a given section this adds up all the pixel's RGB values and then averages them and puts them in a list
                 
@@ -504,8 +531,8 @@ def getAveRgbArraySquare(width, height, pixelWidth, pixelHeight, pix, fineness):
     ## Example: 100px by 200 px
     ## Fineness = 2
     ## Pixel width and Pixel height were chosen to be 10% They are calculated like so...
-    ##  pixelHeight=op.floor(height*percentOfPic)               ##  Height of each section
-    ##  pixelWidth=op.floor(width*percentOfPic)                 ##  Width of each section
+    ##  pixelHeight=math.floor(height*percentOfPic)               ##  Height of each section
+    ##  pixelWidth=math.floor(width*percentOfPic)                 ##  Width of each section
     ## Percent of pic is user chosen
 
     else:
@@ -764,7 +791,7 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     aspectRatio=float(width)/float(height)
 
     imageWidthWeb=mosaicDisplayWidth/numberOfPics
-    #imageHeightWeb=int(op.floor(imageWidthWeb/aspectRatio))
+    #imageHeightWeb=int(math.floor(imageWidthWeb/aspectRatio))
     imageHeightWeb=imageWidthWeb
 
     
@@ -775,7 +802,7 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
 
     ##  The plus 30 is for 15px of padding on both sides of the mosaic
     imageContainerWidth=mosaicDisplayWidth+30
-    imageContainerHeight=int(op.ceil((imageContainerWidth/aspectRatio)+30))
+    imageContainerHeight=int(math.ceil((imageContainerWidth/aspectRatio)+30))
 
     ##  I'll get this working later
     searchTerm=""
