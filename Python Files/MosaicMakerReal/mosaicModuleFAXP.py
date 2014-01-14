@@ -55,31 +55,40 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         # Not sure if that creates a legit copy, but it works for now.
         imCopy=openImageReturnCopy(imageFile)       
 
-        #
+        # Every new image gets stored in a new directory, checks to see if the directory already exists with the
+        # picture inside it and creates the structure and saves a copy of the image if not.
         newFilename=saveImageCopy(imCopy,imageFile,progDir, mainDir)
 
+        # I like png
         newFilenameWithExt=newFilename+'.png'
-        
-        width=imCopy.size[0]                                    ##  Get width of image
-        height=imCopy.size[1]                                   ##  Get height of image
-        pix=imCopy.load()                                       ##  Noooow we have pixel data
+
+        ##  Get width of image
+        width=imCopy.size[0]
+
+        ##  Get height of image
+        height=imCopy.size[1]
+
+        ##  Noooow we have pixel data
+        pix=imCopy.load()                                       
 
         ##  How small do you want the images that make up the mosaic to be?
         ##  If I want squares and the user picks 10%, then it has to be at least 10%, so
         ##  basically accross the shorter dimension determines the size of each square.
-        
+        ## This function just lets the user pick a number from 1-5.
         percentOfPic=getPercentOfPic()             
 
+        ## if aspect ratio < 1
         if width<=height:
+
+            ## Calculate dimensions based on width (shorter dimension)
             pixelWidth=math.floor(width*percentOfPic)
             pixelHeight=pixelWidth
         else:
+            ## Calc dimensions based on height (shorter dimension)
             pixelHeight=math.floor(width*percentOfPic)
             pixelWidth=pixelHeight
 
-        #pixelHeight=math.floor(height*percentOfPic)               ##  Height of each section
-        #pixelWidth=math.floor(width*percentOfPic)                 ##  Width of each section
-        
+        ## 
         aveRgbArray=getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness)
         
         filename=imageQueryLog
@@ -365,85 +374,127 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
     print ("---------------------------------------------------------------------")
     print ("Please wait, the image is being analyzed")
     print ("---------------------------------------------------------------------")
-    aveR,aveG,aveB=0,0,0        ##  I'm currently just averaging RBG to get the overall color of each section
-    r,g,b=0,1,2                 ##  The pixel data is accessed with the rgb values of 0,1,2 respectively 
-    aveRgbArray=[]              ##  Initializing a list. 
 
+    ##  I'm currently just averaging RBG to get the overall color of each section
+    ##  Not really a good way of doing it, I saw a dude who did the RMS - maybe I'll try that.
+
+    ## Initializing
+    aveR,aveG,aveB=0,0,0
+
+    ##  The pixel data is accessed with the rgb values of 0,1,2 respectively 
+    r,g,b=0,1,2
+
+    ##  Initializing a list. 
+    aveRgbArray=[]              
+
+    ## Fineness is how much do I look at the distribution of color within each sub image. F=1 means that RGB for the whole
+    ## square is calculated and the best match is found based on that. For example, a half red/ half green square would match
+    ## perfectly well with an image that had half green/ half red (switched places), where as F2,F3,F4 that would not happen.
+    ## Color distribution within each sub image is looked at, although it obviously takes longer. Still F1 is the first case I
+    ## coded because it is the easiest thing to implement. 
     if fineness==1:
-        wCount, hCount=0,0          ##  Not really a good way of doing it, I saw a dude who did the RMS - maybe I'll try that.
 
-        while hCount<int(math.floor(height/pixelHeight)):         ##  I.E. image is 100px high, percentOfPic is 0.1 -> hCount will reach 10 or something
-            wCount=0                                            ##  Re-initilize wCount for new row of sections
-            while wCount<int(math.floor(width/pixelWidth)):       ##  Same as outer while loop, but for the width
+        # These counts represent rows and columns of sub images. 
+        wCount, hCount=0,0          
+
+        # height/pixelHeight will give the amount of sub image spaces needed for each column
+        while hCount<int(math.floor(height/pixelHeight)):
+
+            ##  Re-initilize wCount for new row of sections
+            wCount=0
+
+            # width/pixelWidth will give number of sub image spaces in each row
+            while wCount<int(math.floor(width/pixelWidth)):     
                 
                 ##  For a given section this adds up all the pixel's RGB values and then averages them and puts them in a list
-                
-                for w in range(int(pixelWidth)):                
+
+                ## for x coordinate for a pixel in pixelWidth
+                for w in range(int(pixelWidth)):
+                    ## for y coordinate for a pixel in pixelHeight
                     for h in range(int(pixelHeight)):
+
+                        ## Get the RGB for the exact place on the image. This requires knowing what sub-image space you are
+                        ## in and also where in that sub image space you are in. 
                         aveR+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][r]
                         aveG+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][g]
                         aveB+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][b]
-                        
+
+                ## After going through each pixel in a sub image space, divide the sum of R,G,B by the total pixels
+                ## I wrote this when I was using rectangular sub image spaces. 
                 aveR=int(round(aveR/(pixelWidth*pixelHeight)))
                 aveG=int(round(aveG/(pixelWidth*pixelHeight)))
                 aveB=int(round(aveB/(pixelWidth*pixelHeight)))
 
+                ## Average RGB for a given sub image space
                 aveRGB=(aveR,aveG,aveB)
+
+                ## Add it to the list that describes the entire image.
                 aveRgbArray.append(aveRGB) 
-                        
+
+                # new column, not new row as I said earlier        
                 wCount=wCount+1
-                
+
+            # new column
             hCount=hCount+1
 
-    ## Example: 100px by 200 px
-    ## Fineness = 2
-    ## Pixel width and Pixel height were chosen to be 10% They are calculated like so...
-    ##  pixelHeight=math.floor(height*percentOfPic)               ##  Height of each section
-    ##  pixelWidth=math.floor(width*percentOfPic)                 ##  Width of each section
-    ## Percent of pic is user chosen
+
+
+    ## If the fineness is greater than 1, (only other possible values atm are 2,3,4)
+
+    ## I will try to give an example for this one to make it easier to follow:
+    ## Let's say that the image is 100px by 200px, the finess is 2 (that looks at a 2x2 grid in
+            # each sub image space
+
+    ## Percent of pic was chosen to be 10% (not a possible choice because of image quality issues)
+
+    ## because the width is the shorter dimension we are taking 10% of that to be the size of each sub image space
+            # which in this case would be 10 pixels
 
     else:
+
+        ## initialize
         subAveR,subAveG,subAveB=0,0,0
         subRgbArray=[]
 
-        subHeight=int(pixelHeight/fineness)                 ## .1*100/2=5
-        subWidth=int(pixelWidth/fineness)                   ## .1*200/2=10
+        ## the width and height of each sub image space was already calculated, this is the width and height of each
+        ## sub SUB image space! Again this was written when sub image spaces were allowed to be rectangular
+        subHeight=int(pixelHeight/fineness)                 ## 10/2=5
+        subWidth=int(pixelWidth/fineness)                   ## 10/2=5
         print ("SubHeight="+str(subHeight))                   
         print ("SubWidth="+str(subWidth))
 
-        heightSections=int(height/pixelHeight)              ## 100/10 = 10
-        widthSections=int(width/pixelWidth)                 ## 200/20 = 10  These should equal the percentage chosen (10%)
+        heightSections=int(height/pixelHeight)              ## 200/10 = 20
+        widthSections=int(width/pixelWidth)                 ## 100/10 = 10
         print ("HeightSections="+str(heightSections))
         print ("WidthSections="+str(widthSections))
         
-        #subHeightSections=int(pixelHeight/subHeight)     
-        #subWidthSections=int(pixelWidth/subWidth)
-        subHeightSections=fineness                          ## =2
-        subWidthSections=fineness                           ## =2
+        subHeightSections=fineness                          ## =2  I guess this is more accurately called subHeightRows
+        subWidthSections=fineness                           ## =2   and this more accurately called subHeightColumns
         print ("SubHeightSections="+str(subHeightSections))
         print ("SubWidthSections="+str(subWidthSections))
 
         ##  This goes across the image one row at a time and does it's thing
         ##  I tell it how many times to go across by calculating the floor of the width divided by the subsection width
 
-        ## For this example, the image is being broken into a 10x10 grid. (But the sections are not square)
+        ## For this example, the image is being broken into a 10x20 grid with each section being a square. 
         
-        for hs in range(heightSections):           ## Calculated to be 10 in example      
+        for hs in range(heightSections):           ## Calculated to be 20 in example      
             for ws in range(widthSections):         ## Calculated to be 10 in example
 
-                ## Basically, for each section in the 10 by 10 grid. Take the fineness and break up each section into another
+                ## Basically, for each section in the 10 by 20 grid. Take the fineness and break up each section into another
                 ## grid, in this example, the grid for each section is 2x2.
                 
                 for h in range(subHeightSections):          #=2
                     for w in range(subWidthSections):       #=2
 
-                        # For each subsection (2x2) of each section (10x10)
+                        # For each subsection (2x2) of each section (10x20)
                         # add up and average all the r,g, and b values.
-                        # adding up the subsection dimensions in this exapmle gets you 10x20 which matches the
+                        # adding up the subsection dimensions in this exapmle gets you 10x10 which matches the
                         # dimensions of the sections themselves, multplying those out to get overall image dimensions
-                        # gives 100X200. This example was chosen to work out even, which rounding errors and floor
-                        # operations there may be some other behavoir going on for other dimensions.
-                        
+                        # gives 100X200. This example was chosen to work out even, with rounding errors and floor
+                        # operations there may be some other behavior going on for other dimensions.
+
+                        # sub height and sub width (really sub sub)
                         for sh in range(subHeight):         #=5
                             for sw in range(subWidth):      #=10
                                 #print '('+str(sw+(subWidth*w)+(pixelWidth*ws))+',',
@@ -454,7 +505,7 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
                                 subAveB+=pix[sw+(subWidth*w)+(pixelWidth*ws),sh+(subHeight*h)+(pixelHeight*hs)][b]
 
                         ## After the r,g, and b vlaues are added, there should be subwidth*subheight values 
-                        ## (50 in this ex.) so divide by that number to get the average
+                        ## (25 in this ex.) so divide by that number to get the average
             
                         subAveR=int(round(subAveR/(subWidth*subHeight)))
                         subAveG=int(round(subAveG/(subWidth*subHeight)))
@@ -468,8 +519,8 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
                 aveRgbArray.append(subRgbArray)
                 subRgbArray=[]
 
-    ## At the end of this there will be a list item for every section (100), containing a list item for every
-    ## subsection (4) for a total of 400 subsections)
+    ## At the end of this there will be a list item for every section (10x20=200), containing a list item for every
+    ## subsection (4) for a total of 800 subsections)
 
     return aveRgbArray
 
