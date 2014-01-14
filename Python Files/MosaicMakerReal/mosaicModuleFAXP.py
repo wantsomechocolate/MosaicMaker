@@ -88,31 +88,53 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
             pixelHeight=math.floor(width*percentOfPic)
             pixelWidth=pixelHeight
 
-        ## 
+        ## Currently this returns a single dimension list with the results of the rgb analysis
+        ## of the base image at each index. I should change this to return a 2 dimension array to
+        ## better represent the image. Maybe.
         aveRgbArray=getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness)
-        
+
+        ## imageQueryLog is chosen depending on the fineness (F2 has a different cache of images than F3, etc)
         filename=imageQueryLog
+
+        ## this just goes through imageQueryLog and returns all the link and rgb info for each web-image
         fileContents=getFileContents(filename)
 
         print ("---------------------------------------------------------------------")
         prompt="Choose queries from list using comma separated integers. [All]"
+
+        ## Present the choices to the user for selection using raw_input
         userSelectedQueries=getUserSelectedQueries(fileContents,prompt)
+
+        ## What a function name! returns a list of two lists, one containing all the image links
+        ## and the other the corresponding results of analsysis for each one.
         returnedArray=getImgUrl_and_aveRgbArrayWeb_forSelection(userSelectedQueries, imageQueryLog)
 
-        imageUrlArray=returnedArray[0]
-        aveRgbArrayWeb=returnedArray[1]
+        ## Unpack
+        imageUrlArray, aveRgbArrayWeb = returnedArray
 
+        ## Timekeeping
         print ("Entering output URL")
         entTime=time.time()
-        outputUrlList=getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness)
 
-        ### Added 12/13/2013
+        ## This takes the results of analyzing the base image, the results of analyzing the web images
+        ## and generates a list of URLs to be used in the final product.
+        ## This recently got some work done to it to randomize the selection process
+        ## It will soon get some more work done to refine that randomization and to save the data
+        ## for the 5 closet web-image matches for each spot so that upon mosaic creation,
+        ## if certain images aren't loading, there are backups, or if an image is being chosen too many times.
+    #----------------------------------------------------------------------------------------------
+        outputUrlList=getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness)
+    #----------------------------------------------------------------------------------------------
+
         print ("Looking through images to find best matches for image section")
+
+        ## Get all the uniques, usually a surprisingly low number (<100, although I have seen >200)
         outputUrlSet = set(outputUrlList)
+        
         print ("There are "+str(len(outputUrlSet))+" unique images in this mosaic")
         print ("Filling "+str(int(height/pixelHeight)*int(width/pixelWidth))+" possible spots")
-        ### Added 12/13/2013
-        
+
+        ## time keeping
         exiTime=time.time()
         print ("Exited output URL")
         diff=exiTime-entTime
@@ -394,16 +416,16 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
     ## coded because it is the easiest thing to implement. 
     if fineness==1:
 
-        # These counts represent rows and columns of sub images. 
+        # These counts represent columns and rows (respectively) of the sub image spaces. 
         wCount, hCount=0,0          
 
-        # height/pixelHeight will give the amount of sub image spaces needed for each column
+        # height/pixelHeight will give the amount of sub image spaces needed for each column (aka the number of rows)
         while hCount<int(math.floor(height/pixelHeight)):
 
             ##  Re-initilize wCount for new row of sections
             wCount=0
 
-            # width/pixelWidth will give number of sub image spaces in each row
+            # width/pixelWidth will give number of sub image spaces in each row (aka the number of columns)
             while wCount<int(math.floor(width/pixelWidth)):     
                 
                 ##  For a given section this adds up all the pixel's RGB values and then averages them and puts them in a list
@@ -414,13 +436,13 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
                     for h in range(int(pixelHeight)):
 
                         ## Get the RGB for the exact place on the image. This requires knowing what sub-image space you are
-                        ## in and also where in that sub image space you are in. 
+                        ## in and also where in that sub image space you are. 
                         aveR+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][r]
                         aveG+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][g]
                         aveB+=pix[w+pixelWidth*wCount,h+pixelHeight*hCount][b]
 
                 ## After going through each pixel in a sub image space, divide the sum of R,G,B by the total pixels
-                ## I wrote this when I was using rectangular sub image spaces. 
+                ## I wrote this when I was using rectangular sub image spaces. (not forcing square AR) 
                 aveR=int(round(aveR/(pixelWidth*pixelHeight)))
                 aveG=int(round(aveG/(pixelWidth*pixelHeight)))
                 aveB=int(round(aveB/(pixelWidth*pixelHeight)))
@@ -431,10 +453,10 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
                 ## Add it to the list that describes the entire image.
                 aveRgbArray.append(aveRGB) 
 
-                # new column, not new row as I said earlier        
+                # new column        
                 wCount=wCount+1
 
-            # new column
+            # new row
             hCount=hCount+1
 
 
@@ -483,6 +505,9 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
 
                 ## Basically, for each section in the 10 by 20 grid. Take the fineness and break up each section into another
                 ## grid, in this example, the grid for each section is 2x2.
+
+                ## The 2x2 sections are looped through first for speed reasons I think, in the first iteration it was
+                ## probably switched. So sub sub sections are first, the sub sections
                 
                 for h in range(subHeightSections):          #=2
                     for w in range(subWidthSections):       #=2
@@ -494,7 +519,7 @@ def getAveRgbArray(width, height, pixelWidth, pixelHeight, pix, fineness):
                         # gives 100X200. This example was chosen to work out even, with rounding errors and floor
                         # operations there may be some other behavior going on for other dimensions.
 
-                        # sub height and sub width (really sub sub)
+                        # sub height and sub width
                         for sh in range(subHeight):         #=5
                             for sw in range(subWidth):      #=10
                                 #print '('+str(sw+(subWidth*w)+(pixelWidth*ws))+',',
@@ -701,18 +726,20 @@ def getUserSelectedQueries(fileContents, prompt):
 
     return userSelectedQueries
 
+## This function gets the image list and associated rgb analysis for each image in the list
+## The links were already retrieved, the analysis already done, this simply gets that info.
 def getImgUrl_and_aveRgbArrayWeb_forSelection(selection, imageQueryLog):
+    
     imageUrlArray=[]
     aveRgbArrayWeb=[]
 
-    #logFilename="savedImageQueries.log"
     logFilename=imageQueryLog
     fileContents=getFileContents(logFilename)
 
     singleQueryImageList=[]
     singleQueryRGBList=[]
 
-    
+    ## below is a hack to get info from the text file that has the rgb data for web images.
     for item in selection:
         for i in range(len(fileContents)):
             if fileContents[i][8:-1]==item:
@@ -731,10 +758,10 @@ def getImgUrl_and_aveRgbArrayWeb_forSelection(selection, imageQueryLog):
     returnedArray.append(aveRgbArrayWeb)
 
     print ("---------------------------------------------------------------------")
-    print ("You are using search queries: "),
+    print ("You are using search queries: ", end="")
     for i in range(len(selection)):
         if i!=len(selection)-1:
-            print (str(selection[i])+', '),
+            print (str(selection[i])+', ', end="")
         else:
             print ("and "+str(selection[i])+".")
     print ("These searches include "+str(len(imageUrlArray))+" images.")
@@ -776,7 +803,7 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
             
             minErrorIndexArray.append(minErrorIndex)
 
-##Psuedo code:
+    ##Psuedo code:
     ## Take the errorSumArray and instead of getting the lowest value, get the 5 lowest values in a list
     ## Do that by making a copy of errorSumArray
     ## Get the min value, remove it, get new min value, remove it. Do that 5 times. I swear I have this already.
