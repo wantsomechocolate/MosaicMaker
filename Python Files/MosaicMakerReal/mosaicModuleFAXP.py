@@ -1,4 +1,10 @@
 
+
+## I thought of another idea, I should save the image analysis of all the base images that way I can not have to
+## redo it everytime. I'd check to see if it was there and if not, then analyze. The program can say,
+## "I looked for a file called, blah, and found it couldn't find it. Currently, there would be a different
+## file for each of the fineness levels, 1,2,3,4. I should really upgrade to a histogram or something. 
+
 ## Packages shipped with python3
 import os, sys
 import ast, numbers, math
@@ -774,13 +780,13 @@ def getImgUrl_and_aveRgbArrayWeb_forSelection(selection, imageQueryLog):
 
 ## This is the function that takes all previous analysis and actually chooses the images that go in each spot
 ## Currently it finds the 5 closest matches and then picks one,
-## I want to make two changes, find the five closest matches and then actuall save a file with the links for each
+## I want to make two changes, find the five closest matches and then actually save a file with the links for each
 ## spot on the image. Then I want to make a new final image generation function (to replace the html version,
 ## although now that I think about it the html version would benefit from this as well) that will actually
 ## generate an image file.
 ## The other thing is to have something where the same image isn't selected twice in a row (if the same
-## image is being chosen, choose at random from the 5.
-## I have make sure the new function I make to generate the image knows to save all of the images it uses until the end
+## image is being chosen, choose at random from the 5, otherwise pick the best match.
+## I have to make sure the new function I make to generate the image knows to save all of the images it uses until the end
 ## so it isn't constantly pinging for the same image.
 
 ## I JUST THOUGHT OF A GREAT IDEA, SAVE THE FREAKING IMAGES AS BIG AS THEY WOULD NEED TO BE TO GO INTO A MOSAIC, AND
@@ -827,13 +833,18 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
 
             #minError=min(errorSumArray)         ## Instead of getting the min error here, get the nth lowest where n is rand int
                                                 ## I think that might work?
-            
+
+            ## This function takes a list of numbers and returns the INDICES of the n lowest values. 
             minError=chan.get_n_min_value_indices(errorSumArray,5)
 
+            ## Choose random number - I think this should be done at a later time (after saving results)
             rand_int=random.randint(0,len(minError)-1)
-            
+
+            ## This currently gets the index of the image to be used in the mosaic (randomly from the best n matches)
             minErrorIndex=minError[rand_int]#errorSumArray.index(minError)
-            
+
+            ## At the end of this loop minErrorIndexArray will be filled with INDICES referring to URLs to use
+            ## in the final mosaic - I think it should be a two dimensional array, whereas right now it is one dimensional
             minErrorIndexArray.append(minErrorIndex)
 
     ##Psuedo code:
@@ -841,50 +852,254 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
     ## Do that by making a copy of errorSumArray
     ## Get the min value, remove it, get new min value, remove it. Do that 5 times. I swear I have this already.
 
+    ## If the fineness is not 1, then do the following!
     else:
 
-        for section in aveRgbArray: 
+        ## For every section in the base image; section will include an average R,G, and B values.
+        for section in aveRgbArray:
+            
             errorSumArray=[]
- 
+
+            ## For every web image; ImageRGB will be an ave r,g,b for all the sub-sections of an image (not entire image)
             for imageRGB in aveRgbArrayWeb:
 
+                ## This is where we start to diverge from the above method.
+                ## Each section here has sub-sections that need to have error calculated.
                 for i in range(len(section)):
 
+                    ## This is some list comprehension type ish
+                    ## i here represents the sub-section (for F=2 there would be 2x2=4) and
+                    ## j represents the color channel, error is again a list of three errors
                     error=[section[i][j]-imageRGB[i][j] for j in range(len(section[i]))]
 
+                    ## For each color channel, sum the absolute value of each error.
+                    ## The difference here is that errorSum will include all the absolute value errors
+                    ## from all the sub-sections. So I do the analysis section by section,
+                    ## but then add it all up to get a single number. 
                     for item in error:
                         errorInter+=abs(item)
                     errorSum+=errorInter
                     errorInter=0
 
-##          This method takes about 10-20 times longer than the above method, Why?
-##          It is probably converting to a numpy array every time that takes all the time.
-##          I bet if I made the two main arrays numpy arrays right off the bat
-##          Theeeen analyzed them, it would go much faster, maybe even faster then the list comp way.        
-##                try:   
-##                    errorSum=np.sum(np.abs(np.array(section)-np.array(imageRGB)))
-##                except:
-##                    errorSum=10000
+            ## This method takes about 10-20 times longer than the above method, Why?
+            ## It is probably converting to a numpy array every time that takes all the time.
+            ## I bet if I made the two main arrays numpy arrays right off the bat
+            ## Theeeen analyzed them, it would go much faster, maybe even faster then the list comp way.        
+            ##  try:   
+            ##      errorSum=np.sum(np.abs(np.array(section)-np.array(imageRGB)))
+            ##  except:
+            ##      errorSum=10000
 
+                ## Same as before, errorSumArray will be mad long and there will be one for each spot on the base image.
                 errorSumArray.append(errorSum)
                 errorSum=0
 
             #minError=min(errorSumArray)
-            
             #minErrorArray.append(minError)
+
+            ## This function takes a list of numbers and returns the INDICES of the n lowest values. 
             minError=chan.get_n_min_value_indices(errorSumArray,5)
 
+            ## Choose random number - I think this should be done at a later time (after saving results)
             rand_int=random.randint(0,len(minError)-1)
-            
+
+            ## This currently gets the index of the image to be used in the mosaic (randomly from the best n matches)
             minErrorIndex=minError[rand_int]#errorSumArray.index(minError)
-            
+
+            ## At the end of this loop minErrorIndexArray will be filled with INDICES referring to URLs to use
+            ## in the final mosaic - I think it should be a two dimensional array, whereas right now it is one dimensional
             minErrorIndexArray.append(minErrorIndex)
 
+
+    ## We are out of the F1 vs Other now and just cleaning up the function
     outputUrlList=[]
+
+    ## Given the indices chosen, go through the UrlList and get the associated URLs
+    ## This sections will have to change to save the URL list to a text doc or something
+    ## It will also include the 5 matches. 
     for item in minErrorIndexArray:
         outputUrlList.append(imageUrlArray[item])
 
     return outputUrlList
+
+
+
+
+
+
+
+
+
+## ---------------------------------This is a copy of the function so I have both coexist----------------------------------
+
+def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
+
+    ## errorSum is the sum of the error in all three channels between the space on the base image and the entire webimage
+    ## maybe I should make them the same size first?
+    errorSum=0
+    errorInter=0
+    errorSumArray=[]
+    minErrorArray=[]
+    minErrorIndexArray=[]
+    urlMap=[]
+
+    ##  What up! This shit works!
+
+    if fineness==1:
+
+        ## For every section in the base image; section will include an average R,G, and B value.
+        for section in aveRgbArray:
+
+            ## Reinitialize errorSumArray
+            errorSumArray=[]
+
+            ## For every web image; ImageRGB will be an ave r,g,b for the entire image
+            for imageRGB in aveRgbArrayWeb:
+
+                ## Reinitialize errorSum
+                errorSum=0
+
+                ## I think error will contain a list with the same length as section and imageRGB and each item will be
+                ## the difference between the average r,g, and b values for each spot. 
+                error=[section[i]-imageRGB[i] for i in range(len(section))]
+
+                ## each color is weighted evenly and the abs is used so that mismatches in different colors don't offset. 
+                for j in error:
+                    errorSum+=abs(j)
+
+                ## For each spot on the base image, a list with the same length as the number of images to choose from
+                ## will be created containing an error for every single one. So if the pool has 2000 images, then
+                ## errorSumArray will be 2000 items long and would represent a single spot on the base image. 
+                errorSumArray.append(errorSum)
+
+
+            #minError=min(errorSumArray)         ## Instead of getting the min error here, get the nth lowest where n is rand int
+                                                ## I think that might work?
+
+            ## This function takes a list of numbers and returns the INDICES of the n lowest values. 
+            minError=chan.get_n_min_value_indices(errorSumArray,5)
+
+            ## Choose random number - I think this should be done at a later time (after saving results)
+            rand_int=random.randint(0,len(minError)-1)
+
+            ## This currently gets the index of the image to be used in the mosaic (randomly from the best n matches)
+            minErrorIndex=minError[rand_int]#errorSumArray.index(minError)
+
+            ## At the end of this loop minErrorIndexArray will be filled with INDICES referring to URLs to use
+            ## in the final mosaic - I think it should be a two dimensional array, whereas right now it is one dimensional
+            minErrorIndexArray.append(minErrorIndex)
+
+    ##Psuedo code:
+    ## Take the errorSumArray and instead of getting the lowest value, get the 5 lowest values in a list
+    ## Do that by making a copy of errorSumArray
+    ## Get the min value, remove it, get new min value, remove it. Do that 5 times. I swear I have this already.
+
+    ## If the fineness is not 1, then do the following!
+    else:
+
+        ## For every section in the base image; section will include an average R,G, and B values.
+        for section in aveRgbArray:
+            
+            errorSumArray=[]
+
+            ## For every web image; ImageRGB will be an ave r,g,b for all the sub-sections of an image (not entire image)
+            for imageRGB in aveRgbArrayWeb:
+
+                ## This is where we start to diverge from the above method.
+                ## Each section here has sub-sections that need to have error calculated.
+                for i in range(len(section)):
+
+                    ## This is some list comprehension type ish
+                    ## i here represents the sub-section (for F=2 there would be 2x2=4) and
+                    ## j represents the color channel, error is again a list of three errors
+                    error=[section[i][j]-imageRGB[i][j] for j in range(len(section[i]))]
+
+                    ## For each color channel, sum the absolute value of each error.
+                    ## The difference here is that errorSum will include all the absolute value errors
+                    ## from all the sub-sections. So I do the analysis section by section,
+                    ## but then add it all up to get a single number. 
+                    for item in error:
+                        errorInter+=abs(item)
+                    errorSum+=errorInter
+                    errorInter=0
+
+            ## This method takes about 10-20 times longer than the above method, Why?
+            ## It is probably converting to a numpy array every time that takes all the time.
+            ## I bet if I made the two main arrays numpy arrays right off the bat
+            ## Theeeen analyzed them, it would go much faster, maybe even faster then the list comp way.        
+            ##  try:   
+            ##      errorSum=np.sum(np.abs(np.array(section)-np.array(imageRGB)))
+            ##  except:
+            ##      errorSum=10000
+
+                ## Same as before, errorSumArray will be mad long and there will be one for each spot on the base image.
+                errorSumArray.append(errorSum)
+                errorSum=0
+
+            #minError=min(errorSumArray)
+            #minErrorArray.append(minError)
+
+            ## This function takes a list of numbers and returns the INDICES of the n lowest values. 
+            minError=chan.get_n_min_value_indices(errorSumArray,5)
+
+            ## So now that I have these - what I want to do, is get the 5 urls associated with these indices
+            ## save them in a 2 dimensional array to preserve special integrity (e.g. 3,19 maps to 3,19 on base image)
+            ## The random number choosing and all that would be in a seperate function that looks at the text file.
+            ## Should I start using sqlite? Because I'd like to store the error with this as well...
+            ## First thing is first is that this function needs to know the number of sub-spaces in each column and row
+            ## Which should really match the aveRgbArray :(
+
+            #let's pretend I know the "width" to be 50 and the "height" to be 100.
+
+            horizontal_images=50
+            vertical_images=100
+
+            ## Get the urls for the 5 min values and put them in a list
+            
+            subspace_matches=[]
+            for item in minError:
+                subspace_matches.append(imageUrlArray[item])
+
+            ## record the 5 urls in urlMap. At the end this will have 5 urls for each spot in base image
+            ## although currently it will not be 2 dimensional as desired :(
+            urlMap.append(subspace_matches)
+
+##            ## Choose random number - I think this should be done at a later time (after saving results)
+##            rand_int=random.randint(0,len(minError)-1)
+
+##            ## This currently gets the index of the image to be used in the mosaic (randomly from the best n matches)
+##            minErrorIndex=minError[rand_int]#errorSumArray.index(minError)
+
+            ## At the end of this loop minErrorIndexArray will be filled with INDICES referring to URLs to use
+            ## in the final mosaic - I think it should be a two dimensional array, whereas right now it is one dimensional
+            #minErrorIndexArray.append(minErrorIndex)
+
+
+    ## We are out of the F1 vs Other now and just cleaning up the function
+    #outputUrlList=[]
+
+    ## Given the indices chosen, go through the UrlList and get the associated URLs
+    ## This sections will have to change to save the URL list to a text doc or something
+    ## It will also include the 5 matches. 
+    #for item in minErrorIndexArray:
+        #outputUrlList.append(imageUrlArray[item])
+
+    return urlMap
+
+
+## ---------------------------------This is a copy of the function so I have both coexist----------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## There are some issues with where this gets the image filename and path from. It is currently not working properly.
