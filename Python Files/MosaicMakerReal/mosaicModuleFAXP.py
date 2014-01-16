@@ -146,8 +146,11 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         cssFile='mosaicStyle.css' 
         jsFile='mosaicScript.js'
 
+        ## This obviously needs some work, I want to use Django for the web porition, but I want to be happy with the script
+        ## version first.
         filenameHTML=generateHTML(width,height,pixelWidth,pixelHeight,mosaicDisplayWidth,cssFile,outputUrlList,newFilename, progDir, mainDir,fineness,jsFile)
-   
+
+        ## Return to main menu
         mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness)
         
     elif choice==2:  # To do a new search
@@ -769,9 +772,23 @@ def getImgUrl_and_aveRgbArrayWeb_forSelection(selection, imageQueryLog):
 
     return returnedArray
 
-## This is the function I want to work on randomizing the selections a bit. This is what I want to fix.
+## This is the function that takes all previous analysis and actually chooses the images that go in each spot
+## Currently it finds the 5 closest matches and then picks one,
+## I want to make two changes, find the five closest matches and then actuall save a file with the links for each
+## spot on the image. Then I want to make a new final image generation function (to replace the html version,
+## although now that I think about it the html version would benefit from this as well) that will actually
+## generate an image file.
+## The other thing is to have something where the same image isn't selected twice in a row (if the same
+## image is being chosen, choose at random from the 5.
+## I have make sure the new function I make to generate the image knows to save all of the images it uses until the end
+## so it isn't constantly pinging for the same image.
+
+## I JUST THOUGHT OF A GREAT IDEA, SAVE THE FREAKING IMAGES AS BIG AS THEY WOULD NEED TO BE TO GO INTO A MOSAIC, AND
+## ONLY THE PORTIONS THAT WOULD BE USED, SO BASICALLY A SMALL SQUARE PER IMAGE!!!!!!!!!!!!!!!
 def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
 
+    ## errorSum is the sum of the error in all three channels between the space on the base image and the entire webimage
+    ## maybe I should make them the same size first?
     errorSum=0
     errorInter=0
     errorSumArray=[]
@@ -782,15 +799,31 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
 
     if fineness==1:
 
+        ## For every section in the base image; section will include an average R,G, and B value.
         for section in aveRgbArray:
+
+            ## Reinitialize errorSumArray
             errorSumArray=[]
-            
+
+            ## For every web image; ImageRGB will be an ave r,g,b for the entire image
             for imageRGB in aveRgbArrayWeb:
+
+                ## Reinitialize errorSum
                 errorSum=0
+
+                ## I think error will contain a list with the same length as section and imageRGB and each item will be
+                ## the difference between the average r,g, and b values for each spot. 
                 error=[section[i]-imageRGB[i] for i in range(len(section))]
+
+                ## each color is weighted evenly and the abs is used so that mismatches in different colors don't offset. 
                 for j in error:
                     errorSum+=abs(j)
+
+                ## For each spot on the base image, a list with the same length as the number of images to choose from
+                ## will be created containing an error for every single one. So if the pool has 2000 images, then
+                ## errorSumArray will be 2000 items long and would represent a single spot on the base image. 
                 errorSumArray.append(errorSum)
+
 
             #minError=min(errorSumArray)         ## Instead of getting the min error here, get the nth lowest where n is rand int
                                                 ## I think that might work?
