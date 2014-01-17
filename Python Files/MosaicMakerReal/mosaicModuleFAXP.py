@@ -94,6 +94,11 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
             pixelHeight=math.floor(width*percentOfPic)
             pixelWidth=pixelHeight
 
+        ## Number of sub spaces in each row
+        subSpaceWidth=int(width/pixelWidth)
+        ## Number of sub spaces in each column
+        subSpaceHeight=int(height/pixelHeight)
+
         ## Currently this returns a single dimension list with the results of the rgb analysis
         ## of the base image at each index. I should change this to return a 2 dimension array to
         ## better represent the image. Maybe.
@@ -129,16 +134,23 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         ## for the 5 closet web-image matches for each spot so that upon mosaic creation,
         ## if certain images aren't loading, there are backups, or if an image is being chosen too many times.
     #----------------------------------------------------------------------------------------------
-        outputUrlList=getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness)
+        #outputUrlList=getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness)
+        outputUrlList=getOutputUrlList2(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness, subSpaceWidth, subSpaceHeight)
     #----------------------------------------------------------------------------------------------
 
-        print ("Looking through images to find best matches for image section")
 
-        ## Get all the uniques, usually a surprisingly low number (<100, although I have seen >200)
-        outputUrlSet = set(outputUrlList)
-        
-        print ("There are "+str(len(outputUrlSet))+" unique images in this mosaic")
-        print ("Filling "+str(int(height/pixelHeight)*int(width/pixelWidth))+" possible spots")
+        #output url list should actually be a map and at each node should be 5 urls. The contents of it
+        # should also be saved to a file with the right name and one row per row on the actual image. 
+
+
+
+##############        print ("Looking through images to find best matches for image section")
+##############
+##############        ## Get all the uniques, usually a surprisingly low number (<100, although I have seen >200)
+##############        outputUrlSet = set(outputUrlList)
+##############        
+##############        print ("There are "+str(len(outputUrlSet))+" unique images in this mosaic")
+##############        print ("Filling "+str(int(height/pixelHeight)*int(width/pixelWidth))+" possible spots")
 
         ## time keeping
         exiTime=time.time()
@@ -148,13 +160,13 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         seconds=int(diff-minutes*60)
         print ("That took "+str(minutes)+" minutes and "+str(seconds)+" seconds!")
         
-        mosaicDisplayWidth=800
-        cssFile='mosaicStyle.css' 
-        jsFile='mosaicScript.js'
-
-        ## This obviously needs some work, I want to use Django for the web porition, but I want to be happy with the script
-        ## version first.
-        filenameHTML=generateHTML(width,height,pixelWidth,pixelHeight,mosaicDisplayWidth,cssFile,outputUrlList,newFilename, progDir, mainDir,fineness,jsFile)
+##############        mosaicDisplayWidth=800
+##############        cssFile='mosaicStyle.css' 
+##############        jsFile='mosaicScript.js'
+##############
+##############        ## This obviously needs some work, I want to use Django for the web porition, but I want to be happy with the script
+##############        ## version first.
+##############        filenameHTML=generateHTML(width,height,pixelWidth,pixelHeight,mosaicDisplayWidth,cssFile,outputUrlList,newFilename, progDir, mainDir,fineness,jsFile)
 
         ## Return to main menu
         mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness)
@@ -932,7 +944,7 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
 
 ## ---------------------------------This is a copy of the function so I have both coexist----------------------------------
 
-def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
+def getOutputUrlList2(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness, ssw, ssh):
 
     ## errorSum is the sum of the error in all three channels between the space on the base image and the entire webimage
     ## maybe I should make them the same size first?
@@ -941,7 +953,7 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
     errorSumArray=[]
     minErrorArray=[]
     minErrorIndexArray=[]
-    urlMap=[]
+    urlMap=[[]]
 
     ##  What up! This shit works!
 
@@ -1049,10 +1061,7 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
             ## First thing is first is that this function needs to know the number of sub-spaces in each column and row
             ## Which should really match the aveRgbArray :(
 
-            #let's pretend I know the "width" to be 50 and the "height" to be 100.
 
-            horizontal_images=50
-            vertical_images=100
 
             ## Get the urls for the 5 min values and put them in a list
             
@@ -1082,18 +1091,41 @@ def getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness):
     ## This sections will have to change to save the URL list to a text doc or something
     ## It will also include the 5 matches. 
     #for item in minErrorIndexArray:
-        #outputUrlList.append(imageUrlArray[item])
+    #outputUrlList.append(imageUrlArray[item])
 
+
+
+    ## This won't be necessary in future but I want to test an idea
+    #print (len(urlMap))
+
+    #urlMapReshape=np.array(urlMap).reshape(ssw,ssh)
+    
+
+
+    fh=open('JudyTestUrlMap.txt','w')
+    fh.write(str(urlMapReshape))
+    fh.close()
+    print ("UrlMapFileCreated")
     return urlMap
 
 
 ## ---------------------------------This is a copy of the function so I have both coexist----------------------------------
 
 
+#def getOutputUrlList2Aux(linkmap, dimensions):
 
-
-
-
+    ##psuedo:
+    ## Go through and take the first url at each spot until the link won't give you access to the photo
+    ## or the previous choice was the same, in the case of a broken link, take the next spot. In the case
+    ## of matching the previous image, use a random one.
+    ## This function should save an IMAGE, and also output a list of URLs
+    ## I do really want to start having the image dimensions matter though.
+    
+##    for item in linkmap:
+##
+##        try:
+            
+    
 
 
 
