@@ -1100,10 +1100,10 @@ def getOutputUrlList2(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness, ssw,
 
     #urlMapReshape=np.array(urlMap).reshape(ssw,ssh)
     
-
+    urlMap2D=[urlMap[x:x+ssw] for x in range(0, len(urlMap)-(ssw-1),ssw)]
 
     fh=open('JudyTestUrlMap.txt','w')
-    fh.write(str(urlMapReshape))
+    fh.write(str(urlMap2D))
     fh.close()
     print ("UrlMapFileCreated")
     return urlMap
