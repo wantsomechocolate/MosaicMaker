@@ -134,8 +134,8 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         ## for the 5 closet web-image matches for each spot so that upon mosaic creation,
         ## if certain images aren't loading, there are backups, or if an image is being chosen too many times.
     #----------------------------------------------------------------------------------------------
-        #outputUrlList=getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness)
-        outputUrlList=getOutputUrlList2(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness, subSpaceWidth, subSpaceHeight)
+        outputUrlList=getOutputUrlList(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness)
+        #outputUrlList=getOutputUrlList1(aveRgbArray, aveRgbArrayWeb, imageUrlArray,fineness, subSpaceWidth, subSpaceHeight)
     #----------------------------------------------------------------------------------------------
 
 
@@ -144,13 +144,13 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
 
 
 
-##############        print ("Looking through images to find best matches for image section")
-##############
-##############        ## Get all the uniques, usually a surprisingly low number (<100, although I have seen >200)
-##############        outputUrlSet = set(outputUrlList)
-##############        
-##############        print ("There are "+str(len(outputUrlSet))+" unique images in this mosaic")
-##############        print ("Filling "+str(int(height/pixelHeight)*int(width/pixelWidth))+" possible spots")
+        print ("Looking through images to find best matches for image section")
+
+        ## Get all the uniques, usually a surprisingly low number (<100, although I have seen >200)
+        outputUrlSet = set(outputUrlList)
+        
+        print ("There are "+str(len(outputUrlSet))+" unique images in this mosaic")
+        print ("Filling "+str(int(height/pixelHeight)*int(width/pixelWidth))+" possible spots")
 
         ## time keeping
         exiTime=time.time()
@@ -160,13 +160,13 @@ def mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness):
         seconds=int(diff-minutes*60)
         print ("That took "+str(minutes)+" minutes and "+str(seconds)+" seconds!")
         
-##############        mosaicDisplayWidth=800
-##############        cssFile='mosaicStyle.css' 
-##############        jsFile='mosaicScript.js'
-##############
-##############        ## This obviously needs some work, I want to use Django for the web porition, but I want to be happy with the script
-##############        ## version first.
-##############        filenameHTML=generateHTML(width,height,pixelWidth,pixelHeight,mosaicDisplayWidth,cssFile,outputUrlList,newFilename, progDir, mainDir,fineness,jsFile)
+        mosaicDisplayWidth=800
+        cssFile='mosaicStyle.css' 
+        jsFile='mosaicScript.js'
+
+        ## This obviously needs some work, I want to use Django for the web porition, but I want to be happy with the script
+        ## version first.
+        filenameHTML=generateHTML(width,height,pixelWidth,pixelHeight,mosaicDisplayWidth,cssFile,outputUrlList,newFilename, progDir, mainDir,fineness,jsFile)
 
         ## Return to main menu
         mosaicMakerInterface(progDir, mainDir, imageQueryLog, fineness)
@@ -1129,11 +1129,7 @@ def getOutputUrlList2(aveRgbArray, aveRgbArrayWeb, imageUrlArray, fineness, ssw,
 
 
 
-
-
-
-
-
+#--------------------TEMP------------------------------
 ## There are some issues with where this gets the image filename and path from. It is currently not working properly.
 def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFile,outputUrlList,imageFile,progDir,mainDir,fineness,jsFile):
 
@@ -1143,8 +1139,7 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     print ("Image file: "+str(imageFile))
     
     mosaicDisplayWidth=800
-    numberOfPics=int(width/pixelWidth)
-    numberOfRows=int(height/pixelHeight)
+    numberOfPics=width/pixelWidth
 
     aspectRatio=float(width)/float(height)
 
@@ -1155,8 +1150,8 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     
 
     ##  This will also be determined a different way. 
-    #imagesPerRow=numberOfPics
-    #imagesPerColumn=numberOfPics
+    imagesPerRow=numberOfPics
+    imagesPerColumn=numberOfPics
 
     ##  The plus 30 is for 15px of padding on both sides of the mosaic
     imageContainerWidth=mosaicDisplayWidth+30
@@ -1167,7 +1162,7 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     altText=searchTerm
 
     ##  Just some header type stuff
-    paras = ( "Here is your mosaic! "+imageFile )
+    paras = ( "Here is your mosaic!" )
 
     ##  Initialize the page
     page = markup.page( )
@@ -1182,23 +1177,8 @@ def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFil
     page.div.close()
 
     ##  Make a div with all the images floating inside
-    page.div(Class = 'imageDivContainer', style='width:'+str(imageContainerWidth)+'; height:'+str(imageContainerHeight))
-
-    for i in range(numberOfRows):
-
-        for j in range(numberOfPics):
-
-            if j==0:
-                page.div(Class = 'imageRow')
-
-            page.div(Class = 'imageDiv', style='background-image:url('+str(outputUrlList[i*numberOfPics+j])+')')
-            page.div.close()
-
-            if j==numberOfPics-1:
-                page.div.close()
-                     
-    #page.div(Class = 'imageDivs', style='background-image:', 
-    #page.img( src=outputUrlList, alt=searchTerm ) #height=imageHeightWeb, width=imageWidthWeb, 
+    page.div(Class = 'imageContainer', style='width:'+str(imageContainerWidth)+'; height:'+str(imageContainerHeight))
+    page.img( src=outputUrlList, alt=searchTerm ) #height=imageHeightWeb, width=imageWidthWeb, 
     page.div.close()
 
     ##  Print html to an actual file so it can be viewed
@@ -1242,51 +1222,25 @@ def createCSS(img_height, img_width):
         background:black;\n
         color:white;\n
     }\n
-    
     .header {\n
         border:2p solid black;\n
         background:orange;\n
         width:800px;\n
         margin:0 auto;\n
     }\n
-    
-    .imageDivContainer {\n
-        overflow:hidden;\n
-        border:2px solid black;\n
+    .imageContainer {\n
+        overflor:hidden;\n
+        border:2p solid black;\n
         background:orange;\n
         margin:0 auto;\n
         padding:15px;\n
     }\n
-    
-    .imageRow {
-
-	position:relative;\n
-        display:inline-block;\n
-	width:100%;\n
-	background-color:orange;\n
-	padding:0px;\n
-	margin:0px;\n
-        
-    }\n
-    
-    .imageDiv {\n
-    
-        display:inline-block;\n
-
+    img {\n
+        float:left;\n
         padding:0px;\n
-
-        margin:-2px;\n
-
-        background-size: cover;\n
-
-        background-repeat: no-repeat;\n
-
-        background-position: 50% 50%;\n"""+
-    
-        "width:"+str(int(img_width))+";\n"+
-    
-        "height:"+str(int(img_height))+";\n"+
-    
+        margin:0px;\n"""+
+        "width:"+str(img_width)+";"+
+        "height:"+str(img_height)+";"+
     """}\n""")
     
     mosaicStyle.close()
@@ -1299,15 +1253,195 @@ def createJs():
 
     """<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
     <script>
-    $(document).ready(function() {	
+    $(document).ready(function() {        
             $('img').error(function(){ 
                     $(this).attr('src', 'https://www.google.com/logos/2012/election12-hp.jpg');
         });
-    });	
+    });        
     </script>""")
 
     mosaicScript.close()
     return jsFilename
+
+#--------------------TEMP------------------------------
+
+
+
+
+############################################ There are some issues with where this gets the image filename and path from. It is currently not working properly.
+##########################################def generateHTML(width,height,pixelWidth, pixelHeight, mosaicDisplayWidth,cssFile,outputUrlList,imageFile,progDir,mainDir,fineness,jsFile):
+##########################################
+##########################################    ##  This makes the html for me and I can set inline css with the style attribute
+##########################################    ##  I want to have all the css in the html so you don't have to float around that mosaic css thang
+##########################################    ##  Eventually the image height and width will be determined other ways
+##########################################    print ("Image file: "+str(imageFile))
+##########################################    
+##########################################    mosaicDisplayWidth=800
+##########################################    numberOfPics=int(width/pixelWidth)
+##########################################    numberOfRows=int(height/pixelHeight)
+##########################################
+##########################################    aspectRatio=float(width)/float(height)
+##########################################
+##########################################    imageWidthWeb=mosaicDisplayWidth/numberOfPics
+##########################################    #imageHeightWeb=int(math.floor(imageWidthWeb/aspectRatio))
+##########################################    imageHeightWeb=imageWidthWeb
+##########################################
+##########################################    
+##########################################
+##########################################    ##  This will also be determined a different way. 
+##########################################    #imagesPerRow=numberOfPics
+##########################################    #imagesPerColumn=numberOfPics
+##########################################
+##########################################    ##  The plus 30 is for 15px of padding on both sides of the mosaic
+##########################################    imageContainerWidth=mosaicDisplayWidth+30
+##########################################    imageContainerHeight=int(math.ceil((imageContainerWidth/aspectRatio)+30))
+##########################################
+##########################################    ##  I'll get this working later
+##########################################    searchTerm=""
+##########################################    altText=searchTerm
+##########################################
+##########################################    ##  Just some header type stuff
+##########################################    paras = ( "Here is your mosaic! "+imageFile )
+##########################################
+##########################################    ##  Initialize the page
+##########################################    page = markup.page( )
+##########################################
+##########################################    page.init( title="Mosaic Maker", 
+##########################################               css=(cssFile),
+##########################################               script={jsFile:'text/type'},)
+##########################################
+##########################################    ##  Make a header
+##########################################    page.div(Class='header', style='width:'+str(imageContainerWidth))
+##########################################    page.p( paras )
+##########################################    page.div.close()
+##########################################
+##########################################    ##  Make a div with all the images floating inside
+##########################################    page.div(Class = 'imageDivContainer', style='width:'+str(imageContainerWidth)+'; height:'+str(imageContainerHeight))
+##########################################
+##########################################    for i in range(numberOfRows):
+##########################################
+##########################################        for j in range(numberOfPics):
+##########################################
+##########################################            if j==0:
+##########################################                page.div(Class = 'imageRow')
+##########################################
+##########################################            page.div(Class = 'imageDiv', style='background-image:url('+str(outputUrlList[i*numberOfPics+j])+')')
+##########################################            page.div.close()
+##########################################
+##########################################            if j==numberOfPics-1:
+##########################################                page.div.close()
+##########################################                     
+##########################################    #page.div(Class = 'imageDivs', style='background-image:', 
+##########################################    #page.img( src=outputUrlList, alt=searchTerm ) #height=imageHeightWeb, width=imageWidthWeb, 
+##########################################    page.div.close()
+##########################################
+##########################################    ##  Print html to an actual file so it can be viewed
+##########################################
+##########################################    #imageFilename=imageFile[imageFile.rindex('/')+1:imageFile.rindex('.')]
+##########################################    imageFilename=imageFile
+##########################################    
+##########################################    print ("---------------------------------------------------------------------")
+##########################################    destFileHTML=input([str("Destination File for HTML Output?["+imageFilename+" Mosaic F"+str(fineness)+" HTML.html]")])
+##########################################    print ("---------------------------------------------------------------------")
+##########################################
+##########################################    if destFileHTML=="":
+##########################################        destFileHTML=imageFilename+" Mosaic F"+str(fineness)+" HTML.html"
+##########################################
+##########################################    else:
+##########################################        destFileHTML+=".html"
+##########################################
+##########################################    os.chdir(progDir+'/'+imageFilename)
+##########################################       
+##########################################    output=open(destFileHTML,'w')
+##########################################    output.write(str(page))
+##########################################    output.close()
+##########################################    print ("---------------------------------------------------------------------")
+##########################################    print ("The page "+destFileHTML+" was created")
+##########################################    print ("---------------------------------------------------------------------")
+##########################################
+##########################################    cssFilename=createCSS(imageHeightWeb, imageWidthWeb)
+##########################################    jsFilename=createJs()
+##########################################
+##########################################    os.chdir(mainDir)
+##########################################
+##########################################    return destFileHTML
+##########################################
+##########################################def createCSS(img_height, img_width):
+##########################################    cssFilename="mosaicStyle.css"
+##########################################    mosaicStyle=open(cssFilename,'w')
+##########################################    mosaicStyle.write(
+##########################################        
+##########################################    """* {box-sizing:border-box;}\n
+##########################################    body {\n
+##########################################        background:black;\n
+##########################################        color:white;\n
+##########################################    }\n
+##########################################    
+##########################################    .header {\n
+##########################################        border:2p solid black;\n
+##########################################        background:orange;\n
+##########################################        width:800px;\n
+##########################################        margin:0 auto;\n
+##########################################    }\n
+##########################################    
+##########################################    .imageDivContainer {\n
+##########################################        overflow:hidden;\n
+##########################################        border:2px solid black;\n
+##########################################        background:orange;\n
+##########################################        margin:0 auto;\n
+##########################################        padding:15px;\n
+##########################################    }\n
+##########################################    
+##########################################    .imageRow {
+##########################################
+##########################################	position:relative;\n
+##########################################        display:inline-block;\n
+##########################################	width:100%;\n
+##########################################	background-color:orange;\n
+##########################################	padding:0px;\n
+##########################################	margin:0px;\n
+##########################################        
+##########################################    }\n
+##########################################    
+##########################################    .imageDiv {\n
+##########################################    
+##########################################        display:inline-block;\n
+##########################################
+##########################################        padding:0px;\n
+##########################################
+##########################################        margin:-2px;\n
+##########################################
+##########################################        background-size: cover;\n
+##########################################
+##########################################        background-repeat: no-repeat;\n
+##########################################
+##########################################        background-position: 50% 50%;\n"""+
+##########################################    
+##########################################        "width:"+str(int(img_width))+";\n"+
+##########################################    
+##########################################        "height:"+str(int(img_height))+";\n"+
+##########################################    
+##########################################    """}\n""")
+##########################################    
+##########################################    mosaicStyle.close()
+##########################################    return cssFilename
+##########################################
+##########################################def createJs():
+##########################################    jsFilename="mosaicScript.js"
+##########################################    mosaicScript=open(jsFilename,'w')
+##########################################    mosaicScript.write(
+##########################################
+##########################################    """<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+##########################################    <script>
+##########################################    $(document).ready(function() {	
+##########################################            $('img').error(function(){ 
+##########################################                    $(this).attr('src', 'https://www.google.com/logos/2012/election12-hp.jpg');
+##########################################        });
+##########################################    });	
+##########################################    </script>""")
+##########################################
+##########################################    mosaicScript.close()
+##########################################    return jsFilename
 
 
 def getImageUrlArrayNew(imageQueryLog):
