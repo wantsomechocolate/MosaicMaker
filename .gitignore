@@ -161,3 +161,13 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+
+#############
+####Other####
+#############
+env
+*.sublime*
+
+#env/lib/python3.4/site-packages/*
+#!env/lib/python3.4/site-packages/marbles
+#!env/lib/python3.4/site-packages/markup_1_10
