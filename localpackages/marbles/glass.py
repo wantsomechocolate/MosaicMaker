@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import Tkinter, tkFileDialog
+import tkinter, tkinter.filedialog
 import re
 from PIL import Image as pili
 
@@ -21,9 +21,9 @@ def getPath(default_directory):
     except:
         pass
 
-    root=Tkinter.Tk()                           ##  Explicitly call the root window so that you can...
+    root=tkinter.Tk()                           ##  Explicitly call the root window so that you can...
     root.withdraw()                             ##  withdraw it!
-    filePath=tkFileDialog.askopenfilename()     ##  imageFile will store the filename of the image you choose
+    filePath=tkinter.filedialog.askopenfilename()     ##  imageFile will store the filename of the image you choose
     #path_list.append(filePath)
     root.destroy()                              ##  Some overkill
     os.chdir(origDir)                           ##  Change dir back for net zero change
@@ -39,9 +39,9 @@ def getPaths(default_directory):
         os.chdir(default_directory)
     except:
         pass
-    root=Tkinter.Tk()                           ##  Explicitly call the root window so that you can...
+    root=tkinter.Tk()                           ##  Explicitly call the root window so that you can...
     root.withdraw()                             ##  withdraw it!
-    filePaths=tkFileDialog.askopenfilenames()    ##  imageFile will store the filename of the image you choose
+    filePaths=tkinter.filedialog.askopenfilenames()    ##  imageFile will store the filename of the image you choose
 
     matched=1
     regex="{.*?}"
@@ -70,7 +70,7 @@ def getFilenameFromPath(path):
 ## This is just a place holder function for when I write a way to get
 ## "the last visited directory" or the last directory saved in
 def get_default_directory():
-    default_directory="C:\Users\James McGlynn\My Programs\Python Programs\pdf2txt\WorkRelated"
+    default_directory="C:\\Users\James McGlynn\My Programs\Python Programs\pdf2txt\WorkRelated"
     return default_directory
 
 #------------------------------------------------------
@@ -149,7 +149,7 @@ def character_transform(string,dictionary):
     matched=0
     for char in string:
         matched=0
-        for key in dictionary.iterkeys():
+        for key in dictionary.keys():
             if char==key:
                 matched=1
                 new_string=new_string+str(dictionary[key])
@@ -185,10 +185,10 @@ def getIntegerInput(start, end, promptString, default, list_of_utils):
     while flag=="BAD":
 
         for i in range(len(list_of_utils)):
-            print i+1,
-            print " : "+list_of_utils[i]
+            print(i+1, end=' ')
+            print(" : "+list_of_utils[i])
 
-        userSelection=raw_input(promptString)
+        userSelection=input(promptString)
 
         if userSelection=="":
             userSelection=default
@@ -196,14 +196,14 @@ def getIntegerInput(start, end, promptString, default, list_of_utils):
         try:
             userSelection=int(userSelection)
             if userSelection<start:
-                print "Option Doesn't Exist."
+                print("Option Doesn't Exist.")
             elif userSelection>end:
-                print "Option Doesn't Exist."
+                print("Option Doesn't Exist.")
             else:
                 flag="GOOD"
             
         except:
-            print "Please enter an integer."
+            print("Please enter an integer.")
 
     return userSelection
 
@@ -231,23 +231,23 @@ def image_handles_from_dir_png(directory):
 ## Error Handling
 #------------------------------------------------------
 def print_err_info(err_inf_def,file_name_def):
-    print "Exception Encountereed...."
+    print("Exception Encountereed....")
     err_inf_def=sys.exc_info()
-    print "On line "+str(err_inf_def[2].tb_lineno),
-    print str(err_inf_def[0])
+    print("On line "+str(err_inf_def[2].tb_lineno), end=' ')
+    print(str(err_inf_def[0]))
     fh_def=open(file_name_def, 'r')
     lines_def=fh_def.readlines()
     err_line_def=lines_def[err_inf_def[2].tb_lineno-1].strip()
-    print err_line_def
+    print(err_line_def)
     fh_def.close()
-    print str(err_inf_def[1])
+    print(str(err_inf_def[1]))
 
     try:
-        print "error occured in a function call to another file on line "+str(err_inf_def[2].tb_next.tb_lineno)
+        print("error occured in a function call to another file on line "+str(err_inf_def[2].tb_next.tb_lineno))
     except:
         pass
     
-    print "Exception Handled"
+    print("Exception Handled")
     return err_inf_def
 
 

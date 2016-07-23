@@ -168,6 +168,6 @@ pip-log.txt
 env
 *.sublime*
 
-#env/lib/python3.4/site-packages/*
-#!env/lib/python3.4/site-packages/marbles
-#!env/lib/python3.4/site-packages/markup_1_10
+env/lib/python3.4/site-packages/*
+!env/lib/python3.4/site-packages/marbles
+!env/lib/python3.4/site-packages/markup_1_10

@@ -203,7 +203,7 @@ def getProgramDirectory(mainDir,progDataLog):
         root=tkinter.Tk()                           ##  Explicitly call the root window so that you can...
         root.withdraw()                             ##  withdraw it!
 
-        baseDirectory=tkinter.filedialog.askdirectory(focus=True)   ##  imageFile will store the filename of the image you choose
+        baseDirectory=tkinter.filedialog.askdirectory()   ##  imageFile will store the filename of the image you choose
         
         root.destroy()                              ##  Some overkill
 
