@@ -145,7 +145,7 @@ def img_crop_center(img):
 
 	crop = img.crop((left,upper,right,lower))
 	
-	if hasattr(img,'filename')
+	if hasattr(img,'filename'):
 		crop.filename = img.filename
 
 	return crop
