@@ -39,30 +39,36 @@ PIECE_ACCEPTED_FILETYPES = ['.png','.jpg']
 class MosaicImage:
 
 	def __init__(self, img):
-		self.original_image = img
+
+		if type(img) == type('string'):
+			print("MosacImage object initialized with a string")
+			img = Image.open(img)
+
 		self.img 			= img
-
+		self.original_image = img
+		
 		if self.original_image.mode == 'RGBA':
-			self.rgba_to_rgb()
+			self.__rgba_to_rgb()
 
-		self.update()
+		self.__update()
 
 
 
-	def update(self):
+	def __update(self):
 		self.rgb_data 		=	np.asarray(self.img)
 		self.rgb_data_shape = 	self.rgb_data.shape
 		self.mode			=	self.img.mode
 		self.error 			=	None	
-		self.width, self.height = self.img.size		
+		self.width, self.height = self.img.size
+		self.size 			= 	self.img.size		
 
 
 
-	def rgba_to_rgb(self):
+	def __rgba_to_rgb(self):
 		new_img = Image.new("RGB", self.img.size, (255,255,255))
 		new_img.paste(self.img, mask=self.img.split()[3])
 		self.img = new_img
-		self.update()		
+		self.__update()		
 
 
 
@@ -78,7 +84,7 @@ class MosaicImage:
 			lower = floor( (oh/2) + (dh/2) )
 
 			self.img = self.img.crop((left,upper,right,lower))
-			self.update()
+			self.__update()
 
 
 
@@ -87,7 +93,7 @@ class MosaicImage:
 			pass
 		else:	
 			self.img = self.img.resize(PIECE_DEFAULT_SAVE_SIZE)
-			self.update()
+			self.__update()
 
 
 
@@ -105,6 +111,15 @@ class Mosaic:
 	##		2. a pillow image object
 	##		3. a string/directory to an image
 	def __init__(self, imgObj, granularity = 1/16, opts=dict()):
+
+
+		if type(imgObj) == type('string'):
+			print("Mosaic object initialized with a string")
+			imgObj = MosaicImage( Image.open(imgObj) )
+		elif type(imgObj).__name__[-9:] == 'ImageFile':
+			print("Mosaic object initialized with an image object")
+			imgObj = MosaicImage( imgObj )
+
 
 		## targetImgObject Attributes are the height and the width and the min dim
 		self.targetImgObject 			= imgObj
@@ -138,17 +153,16 @@ class Mosaic:
 
 	def save_sections(self):
 
-		## THE SECTIONS HAVE TO BE SAVED AS 128X128 STOOOOOOPID!
-		
-		saveDir = os.path.splitext(master.targetImgObject.original_image.filename)[0]+"/sections/"
+		timestamp = str(int(datetime.utcnow().timestamp()))
+		saveDir = os.path.splitext(self.targetImgObject.original_image.filename)[0]+'/sections/sections-'+timestamp+'/'
 		os.makedirs(saveDir)
-		for i in range(len(master.grid)):
-			for j in range(len(master.grid[i])):
-				section = master.grid[i][j].img
-				section.resize((128,128)) ## This is currently the default - 
+		for i in range(len(self.grid)):
+			for j in range(len(self.grid[i])):
+				section = self.grid[i][j].img
+				section = section.resize( PIECE_DEFAULT_SAVE_SIZE ) ## This is currently the default - 
 				section.save(saveDir+str(i)+"-"+str(j)+".png")
-
-		return None
+		print(saveDir)
+		return saveDir
 
 
 	## I think I would rather this property return a unique object list?
@@ -169,7 +183,7 @@ class Mosaic:
 
 		seen = set()
 		unique = []
-		for row in master.grid:
+		for row in self.grid:
 			for obj in row:
 				if obj.currentMosaicImage.original_image.filename not in seen:
 					unique.append(obj)
@@ -188,11 +202,12 @@ class Mosaic:
 	## I think this function should also make a database entry so you can recreate it later!
 	## thie method also needs the ability to save all the images it needs in the images directory
 	## There is also no css file currently created with this function. 
-	def output_html(master):
+	def output_html(self):
 
-		timestamp = int(datetime.utcnow().timestamp())
+		start = datetime.utcnow()
+		timestamp = int(start.timestamp())
 
-		baseImageFilepath = master.targetImgObject.original_image.filename
+		baseImageFilepath = self.targetImgObject.original_image.filename
 		baseSaveDir = os.path.splitext(baseImageFilepath)[0]
 		htmlDir = baseSaveDir+'/html/html-'+str(timestamp)+'/'
 		imgName = baseSaveDir.split('/')[-1]
@@ -221,14 +236,14 @@ class Mosaic:
 			with tag('body'):
 				with tag('div', klass='imageContainer'):
 					
-					for i in range(master.h_sections):
+					for i in range(self.h_sections):
 
 						with tag('div', klass='row', id='row-'+str(i)):
 					
-							for j in range(master.w_sections):
+							for j in range(self.w_sections):
 
 								with tag('div', klass='col', id='cell-'+str(i)+'-'+str(j)):
-									doc.stag('img', src='pieces/'+master.grid[i][j].currentMosaicImage.original_image.filename.split('/')[-1])
+									doc.stag('img', src='pieces/'+self.grid[i][j].currentMosaicImage.original_image.filename.split('/')[-1])
 					
 		
 		with open(htmlOutputFilePath, 'w') as fh:
@@ -283,7 +298,7 @@ class Mosaic:
 
 
 
-		for item in master.uniquePiecesObjList:
+		for item in self.uniquePiecesObjList:
 			im = Image.open(item.currentMosaicImage.original_image.filename)
 			im_name = item.currentMosaicImage.original_image.filename.split('/')[-1]
 			im.save(piecesDir+im_name)
@@ -417,7 +432,7 @@ class Mosaic:
 		## Because I'm currently using a single piece_list and just having it chill in memory
 		## I need to flush the pre-calculated stuff out of it before starting a new mosaic
 		## but the piece_list isn't an attribute of the mosaic object, so this feels dirty. 
-		for piece in piece_list:
+		for piece in piece_list.pieces:
 			if hasattr(piece, 'rgb_avg'):
 				delattr(piece, 'rgb_avg')
 
@@ -429,9 +444,9 @@ class Mosaic:
 		for h_section in range(self.h_sections):
 			for w_section in range(self.w_sections):
 		
-				for i in range(len(piece_list)):
+				for i in range(len(piece_list.pieces)):
 					e = comparison_function( 	self.grid[h_section][w_section]				,
-												piece_list[i] 								, 
+												piece_list.pieces[i] 								, 
 												f 					= f 					, 
 												rgb_weighting 		= rgb_weighting			, 
 												random_max 			= random_max			, 
@@ -440,7 +455,7 @@ class Mosaic:
 
 				## Right now sourceImgObjList is the same between iterations of this loop and the error is getting
 				## reset each time. I feel like trying to save all the error results would be too much information. 
-				self.choose_match( (h_section,w_section), piece_list, opts )
+				self.choose_match( (h_section,w_section), piece_list.pieces, opts )
 
 		print ("That took "+ str((datetime.utcnow() - start).total_seconds()) +" seconds")
 
@@ -614,12 +629,12 @@ class PieceList:
 
 		if os.path.isdir(arg):
 			self.directory = arg
-			self.pieces = self.create_piece_list_from_directory(arg)
+			self.pieces = self.__create_piece_list_from_directory(arg)
 		else:
 			self.pieces = []
 
 
-	def create_piece_list_from_directory(self, directory):
+	def __create_piece_list_from_directory(self, directory):
 
 		items = os.listdir(directory)
 
