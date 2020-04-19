@@ -11,10 +11,10 @@ from yattag import Doc
 from yattag import indent
 
 ## Should come from a configuration at some point. 
-PIECE_DEFAULT_SAVE_SIZE = (128,128)
+PIECE_DEFAULT_SAVE_SIZE = (512,512)
 PIECE_ACCEPTED_FILETYPES = ['.png','.jpg']
 
-
+## ###########################################################################################
 ## This file defines the following classes all related to creating photo mosaics. 
 ## Mosaic Image
 ## Mosaic
@@ -28,14 +28,12 @@ PIECE_ACCEPTED_FILETYPES = ['.png','.jpg']
 ## Holds information about the sections
 
 ## CompareImages
-## Just a holder for the comparison functions used to compare sections and pices
+## Just a holder for the comparison functions used to compare sections and pieces
 
 ## PieceList
 ## Holds the pieces, has some basic functionality for getting a piece list from a directory
 
 
-## Object to automatically add a few things to pillow image objects
-## I also added a "has" method, but I don't actually use it. 
 class MosaicImage:
 
 	def __init__(self, img):
@@ -46,6 +44,8 @@ class MosaicImage:
 
 		self.img 			= img
 		self.original_image = img
+		if 'exif' in self.original_image.info:
+			self.exif 		= self.original_image.info['exif']
 		
 		if self.original_image.mode == 'RGBA':
 			self.__rgba_to_rgb()
@@ -88,110 +88,105 @@ class MosaicImage:
 
 
 
-	def resize_to_piece_default_save_size(self):
+	def resize(self,size = PIECE_DEFAULT_SAVE_SIZE):
 		if self.img.size == PIECE_DEFAULT_SAVE_SIZE:
 			pass
 		else:	
-			self.img = self.img.resize(PIECE_DEFAULT_SAVE_SIZE)
+			self.img = self.img.resize(size)
 			self.__update()
 
 
 
+	def to_thumbnail(self,size = PIECE_DEFAULT_SAVE_SIZE):
+		self.img_crop_center()
+		self.resize(size)
 
-## Master object to hold a mosaic - feels like it's turning into a bohemoth
-## I don't have a lot of experience with classes yet and it feels like I might be 
-## putting too much logic into the this class.
 
-## size is a tuple of w x h
-## individual items are accessed with row,col
+
+
 class Mosaic:
+	'''Size is a tuple of width X height. Individual sections are accessed with [row][col]. 
+	First argument can be a string, PIL image object, or MosacImage obect.'''
+	def __init__(self, image, granularity = 1/16, opts=dict()):
 
-	## I want to see if I could potentially have this class accept
-	##		1. a mosaic image object
-	##		2. a pillow image object
-	##		3. a string/directory to an image
-	def __init__(self, imgObj, granularity = 1/16, opts=dict()):
-
-
-		if type(imgObj) == type('string'):
+		if type(image) == type('string'):
 			print("Mosaic object initialized with a string")
-			imgObj = MosaicImage( Image.open(imgObj) )
-		elif type(imgObj).__name__[-9:] == 'ImageFile':
+			image = MosaicImage( Image.open(image) )
+		elif type(image).__name__[-9:] == 'ImageFile':
 			print("Mosaic object initialized with an image object")
-			imgObj = MosaicImage( imgObj )
+			image = MosaicImage( image )
 
 
-		## targetImgObject Attributes are the height and the width and the min dim
-		self.targetImgObject 			= imgObj
-		self.targetImgObject.minDim 	= min(self.targetImgObject.width, self.targetImgObject.height)
+		self.target 		= image
+		self.target.min_dim 	= min(self.target.width, self.target.height)
 		
 		## Grid Attributes
-		self.granularity 				= granularity
+		self.granularity 	= granularity
 
-		self.sectionDim 				= int(self.granularity * self.targetImgObject.minDim)
-		self.sectionWidth 				= self.sectionHeight = self.sectionDim
+		## self.sectionDim 	= int(self.granularity * self.target.min_dim)
+		self.section_width 	= self.section_height = int(self.granularity * self.target.min_dim)
 
-		self.w_sections 				= int( self.targetImgObject.width  / self.sectionWidth  )
-		self.h_sections 				= int( self.targetImgObject.height / self.sectionHeight )
+		self.w_sections 	= int( self.target.width  / self.section_width  )
+		self.h_sections 	= int( self.target.height / self.section_height )
 
 		## Set up an empty grid of the size you'll need based on the inputs. 
 		self.grid = [ [None for i in range(self.w_sections)] for j in range(self.h_sections) ]
 
 
-		## Loop through all the sections and create imgObjects out of them all and put them in the appropriate
-		## place in the grid
+		## Loop through all the sections and create MosaicImage objects out of them all and put them in the appropriate
+		## place in the grid - these are referred to as sections
 		for h_section in range(self.h_sections):
 			for w_section in range(self.w_sections):
-				targetImgSection = self.targetImgObject.img.crop((	self.sectionWidth	*	 w_section 		, 		## left
-																	self.sectionHeight 	*	 h_section 		, 		## top
-																	self.sectionWidth	*	(w_section+1)	,		## right
-																	self.sectionHeight	*	(h_section+1) 	,	))	## bottom
+				section = self.target.img.crop((	self.section_width	*	 w_section 		, 		## left
+													self.section_height *	 h_section 		, 		## top
+													self.section_width	*	(w_section+1)	,		## right
+													self.section_height	*	(h_section+1) 	,	))	## bottom
 				
 				## the grid is indexed using row,col
-				self.grid[h_section][w_section] = MosaicImage(targetImgSection)
+				self.grid[h_section][w_section] = MosaicImage(section)
 
 
 	def save_sections(self):
-
+		
 		timestamp = str(int(datetime.utcnow().timestamp()))
-		saveDir = os.path.splitext(self.targetImgObject.original_image.filename)[0]+'/sections/sections-'+timestamp+'/'
-		os.makedirs(saveDir)
+		save_dir = os.path.splitext(self.target.original_image.filename)[0]+'/sections/sections-'+timestamp+'/'
+		os.makedirs(save_dir)
 		for i in range(len(self.grid)):
 			for j in range(len(self.grid[i])):
 				section = self.grid[i][j].img
 				section = section.resize( PIECE_DEFAULT_SAVE_SIZE ) ## This is currently the default - 
-				section.save(saveDir+str(i)+"-"+str(j)+".png")
-		print(saveDir)
-		return saveDir
+				section.save(save_dir+str(i)+"-"+str(j)+".png")
+		print(save_dir)
+		return save_dir
 
 
 	## I think I would rather this property return a unique object list?
 	## A unique list of objects based on a particular attribute though. Which I don't know how to do at the moment. 	
 	@property
-	def uniqueImageList(self):
+	def unique_piece_filenames(self):
 
-		imgList=[]
+		img_list=[]
 		for i in range(self.h_sections):
 			for j in range (self.w_sections):
-				imgList.append(self.grid[i][j].currentMosaicImage.original_image.filename)
-		self._uniqueImageList = set(imgList)
-		return self._uniqueImageList
+				img_list.append(self.grid[i][j].piece.original_image.filename)
+		self._unique_piece_filenames = set(img_list)
+		return self._unique_piece_filenames
 
 
 	@property
-	def uniquePiecesObjList(self):
+	def unique_pieces(self):
 
 		seen = set()
 		unique = []
 		for row in self.grid:
 			for obj in row:
-				if obj.currentMosaicImage.original_image.filename not in seen:
+				if obj.piece.original_image.filename not in seen:
 					unique.append(obj)
-					seen.add(obj.currentMosaicImage.original_image.filename)
+					seen.add(obj.piece.original_image.filename)
 
-		self._uniquePiecesObjList = unique
+		self._unique_pieces = unique
 
-		return self._uniquePiecesObjList
+		return self._unique_pieces
 	
 
 
@@ -207,17 +202,18 @@ class Mosaic:
 		start = datetime.utcnow()
 		timestamp = int(start.timestamp())
 
-		baseImageFilepath = self.targetImgObject.original_image.filename
-		baseSaveDir = os.path.splitext(baseImageFilepath)[0]
-		htmlDir = baseSaveDir+'/html/html-'+str(timestamp)+'/'
-		imgName = baseSaveDir.split('/')[-1]
-		piecesDir = htmlDir+'pieces/'
+		target_image_filepath = self.target.original_image.filename
+		base_save_directory = os.path.splitext(target_image_filepath)[0]
+		html_save_directory = base_save_directory+'/html/html-'+str(timestamp)+'/'
+		pieces_save_directory = html_save_directory+'pieces/'
+		
+		img_filename = base_save_directory.split('/')[-1]
 
-		os.makedirs(htmlDir) if not os.path.exists(htmlDir) else None
-		os.makedirs(piecesDir) if not os.path.exists(piecesDir) else None
+		os.makedirs(html_save_directory) if not os.path.exists(html_save_directory) else None
+		os.makedirs(pieces_save_directory) if not os.path.exists(pieces_save_directory) else None
 
-		htmlOutputFilePath = htmlDir+imgName+'-'+str(int(datetime.utcnow().timestamp()))+'.html'		
-		cssOutputFilePath = htmlDir+'mosaicStyle.css'
+		html_output_filepath = html_save_directory+img_filename+'-'+str(int(datetime.utcnow().timestamp()))+'.html'		
+		css_output_filepath = html_save_directory+'mosaicStyle.css'
 
 		doc, tag, text = Doc().tagtext()
 
@@ -243,176 +239,127 @@ class Mosaic:
 							for j in range(self.w_sections):
 
 								with tag('div', klass='col', id='cell-'+str(i)+'-'+str(j)):
-									doc.stag('img', src='pieces/'+self.grid[i][j].currentMosaicImage.original_image.filename.split('/')[-1])
+									doc.stag('img', src='pieces/'+self.grid[i][j].piece.original_image.filename.split('/')[-1])
 					
 		
-		with open(htmlOutputFilePath, 'w') as fh:
+		with open(html_output_filepath, 'w') as fh:
 			output = indent(doc.getvalue())
 			fh.write(output)
 
 
-		css_text = '''	* {box-sizing:border-box;}
-
-					    body {
-					        background:black;
-					        color:white;
-					    }
-
+		css_text = '''
+						* {box-sizing:border-box;}
+					    body {background:black;
+					        	color:white; 		}
 					    .imageContainer {
-					        overflow:hidden;
-					        border:2p solid black;
-					        margin:0 auto;
-					        padding:15px;
-					    }
-
-					    img {
-					        padding:0px;
-					        margin:0px;
-							height:10px;
-							width:10px;
-						}
-
-						.row{
-							width:100%;
-							padding:0px;
-							margin:0px;
-						}
-						
-						
+					    		overflow:hidden;
+					        	border:2p solid black;
+					        	margin:0 auto;
+					        	padding:15px; 		}
+					    img {padding:0px;
+					        	margin:0px;
+								height:20px;
+								width:20px;			}
+						.row {width:100%;
+								padding:0px;
+								margin:0px;			}						
 						/* Clear floats after image containers */
-						.row::after {
-							clear: both;
-							content: "";
-							display:block;
-						}
-						
-						.col {
-							float: left;
-							padding: 0px;
-							margin:0px;
-							height:10px;
-						}											'''
+						.row::after {clear: both;
+								content: "";
+								display:block;		}
+						.col {float: left;
+								padding: 0px;
+								margin:0px;
+								height:20px; 		}	
+					'''
 
-		with open(cssOutputFilePath, 'w') as fh:
+		with open(css_output_filepath, 'w') as fh:
 			fh.write(css_text)
 
 
+		for item in self.unique_pieces:
+			im = Image.open(item.piece.original_image.filename)
+			im_name = item.piece.original_image.filename.split('/')[-1]
+			im.save(pieces_save_directory+im_name)
 
-		for item in self.uniquePiecesObjList:
-			im = Image.open(item.currentMosaicImage.original_image.filename)
-			im_name = item.currentMosaicImage.original_image.filename.split('/')[-1]
-			im.save(piecesDir+im_name)
-
-		return htmlOutputFilePath
-
+		return html_output_filepath
 
 
-	def output_to_image(master,opts=dict()):
 
-		baseImageFilepath = master.targetImgObject.original_image.filename
+	def output_to_image(self,opts=dict()):
 
-		## Because I know the thumbnails are 128x128, I'm going to use that for now
-		## This means the mosaic image can have different dimensions from the original image
-		## thumbnail_size = (128,128) ## This has the side effect of not being able to use smaller source images as well. 
+		start = datetime.utcnow()
+		target_image_filepath = self.target.original_image.filename
 
-		## This is much better. just ask the first section of the grid what size the chosen image is. 
-		## this only assumes that all source images are the same size. Still maybe not a gnt in the future
-		## but better than what I got goin on before
-		thumbnail_size = master.grid[0][0].currentMosaicImage.img.size
+		## This assumes all thumbnails are the same dimensions - ok for now, but in the future I want to avoid this limitation
+		thumbnail_size = self.grid[0][0].piece.img.size
 
-		outputImgWidth  = master.w_sections * thumbnail_size[0]
-		outputImgHeight = master.h_sections * thumbnail_size[1]
+		mosaic_width  = self.w_sections * thumbnail_size[0]
+		mosaic_height = self.h_sections * thumbnail_size[1]
 
-		im = Image.new('RGB', (outputImgWidth,outputImgHeight))
+		im = Image.new('RGB', (mosaic_width,mosaic_height))
 
-		for i in range(master.h_sections):
-			for j in range(master.w_sections):
-				im.paste(master.grid[i][j].currentMosaicImage.img,(j*thumbnail_size[0],i*thumbnail_size[1]))
+		for i in range(self.h_sections):
+			for j in range(self.w_sections):
+				im.paste(self.grid[i][j].piece.img,(j*thumbnail_size[0],i*thumbnail_size[1]))
 
-		outputImgSaveDir = os.path.splitext(baseImageFilepath)[0]+'/mosaics/'
+		mosaic_save_directory = os.path.splitext(target_image_filepath)[0]+'/mosaics/'
 		
-		os.makedirs(outputImgSaveDir) if not os.path.exists(outputImgSaveDir) else None
+		os.makedirs(mosaic_save_directory) if not os.path.exists(mosaic_save_directory) else None
 		
-		# outputImgSavePath = outputImgSaveDir+'P'+str(round(100*global_opts_dict['granularity']))+'F'+str(global_opts_dict['f'])+'R'+str(global_opts_dict['random_max'])+'-'+str(int(datetime.utcnow().timestamp()))+'.png'
-		outputImgSavePath = outputImgSaveDir+str(int(datetime.utcnow().timestamp()))+'.png'
+		# mosaic_save_filepath = mosaic_save_directory+'P'+str(round(100*global_opts_dict['granularity']))+'F'+str(global_opts_dict['f'])+'R'+str(global_opts_dict['random_max'])+'-'+str(int(datetime.utcnow().timestamp()))+'.png'
+		mosaic_save_filepath = mosaic_save_directory+str(int(start.timestamp()))+'.png'
 
-		im.save(outputImgSavePath)
+		im.save(mosaic_save_filepath, quality=95)
 
-		return outputImgSavePath
+		print ("That took "+ str((datetime.utcnow() - start).total_seconds()) +" seconds")
+
+		return mosaic_save_filepath
 
 
 
-	## ok we're finally here! - try to incorporate logic to prevent sections from choosing
-	## the same piece as any adjecent sections (including diagonally adjacent)
-	def choose_match(self, coordinates, sourceImgObjList, opts = dict() ):
+	## Someday I want to save the state of the pieces list for each section to have a quick ref of good alt matches
+	## I would use deep copy or something and depending on resources save the file path/id or the image data.  
+	def choose_match(self, coordinates, pieces, random_max, neighborhood_size, opts = dict() ):
+		'''Choose the closest match that doesn't violate the neighbor constraint'''
 		
-		## Get random max from the opts dict if it is given. 
-		random_max = opts['random_max'] if 'random_max' in opts.keys() else 1
+		## Sort in the beginning because I think it makes later things faster. 
+		pieces.sort(key=lambda x: x.error)
 
-		## Sort the sourceImgObjList based on the current state of the error metrics
-		## Should choose match be the one responsible for getting the error for each piece?
-		## Because in order to choose match for a single section, you also need to be able
-		## to calculate the error for a single section. What does that look like?
-		## That would be just the third loop of the main part of the program
-		## The output of that function would feed this one. 
-		sourceImgObjList.sort(key=lambda x: x.error)
+		n_min_i = max( neighborhood_size * -1 , coordinates[0] * -1 )
+		n_max_i = min( neighborhood_size +  1 , self.h_sections - coordinates[0] )
 
+		n_min_j = max( neighborhood_size * -1 , coordinates[1] * -1 )
+		n_max_j = min( neighborhood_size +  1 , self.w_sections - coordinates[1] )
 
-		## (for now) take the first one (least error) and add it to the master grid as the best match!		
-		#self.grid[coordinates[0]][coordinates[1]].currentMosaicImage = sourceImgObjList[ int(random()*global_opts_dict['random_max']) ]	
+		## Loop through all the neighbors that a particular section has.
+		for i_offset in range( n_min_i, n_max_i, 1 ): ## row or height
+			for j_offset in range( n_min_j, n_max_j, 1 ): ## column or width
+				if (i_offset != 0 or j_offset != 0): ## if you're not dealing with urself
+					
+					## get the neighbor from self
+					neighbor = self.grid[coordinates[0]+i_offset][coordinates[1]+j_offset]
 
+					## does neighbor have a mosaic object chosen for itself yet?
+					if hasattr(neighbor,'piece'):
+						neighbor_mosaic_image = neighbor.piece
 
-		## So what is the logic here.
-		## make a list of the files from surrounding items
-		neighboring_img=[]
-		neighbors = (-1,0,1)
-		for i_offset in neighbors:
-			for j_offset in neighbors:
-				if i_offset+j_offset != 0:
-					try:
-						neighboring_img.append( self.grid[coordinates[0]+i_offset][coordinates[1]+j_offset].currentMosaicImage.original_image.filename )
-					except IndexError as err:
-						pass #print(err)
-					except AttributeError as err:
-						pass #print(err)
+						## Find where the neighbor's piece is in the pieces list. I didn't write this code myself. 
+						piece = next((x for x in pieces if x.original_image.filename == neighbor_mosaic_image.original_image.filename), None)
+
+						## Update it's error to be nothing (and properly handle None on sort)
+						piece.error = None
 
 
-		#chosenObj = sourceImgObject[0] 
-		## use a while loop to check for in-ness of pieces in the neighbors list. 
-		i = 0
-		while sourceImgObjList[i].original_image.filename in neighboring_img:
-			i+=1
-
-		self.grid[coordinates[0]][coordinates[1]].currentMosaicImage = sourceImgObjList[i]
+		## Sort the list again, this time there will be some None - https://stackoverflow.com/a/18411610/1937423
+		pieces.sort(key=lambda x: (x.error is None, x.error))		
+		
+		self.grid[coordinates[0]][coordinates[1]].piece = pieces[ int(random()*random_max) ]
 
 
-		## This was all my thoughts during the move of this code from inside the main loop to a method of the main class
-
-		## The combination of the below two lines of code should be in a function call so that
-		## custom image selection methods can be implemented.
-		## But I'm not 100% sure on how I should structure the function because I want to have the ability
-		## to check other objects in the grid, but I want to write a generalized selection function based 
-		## on the error attributes of a list of objects. 
-		## So I guess the comparison function needs to take
-		## The master grid, the row and column of the section in question and the sourceImgObjList (sorted or not?)
-		## Perhaps each section can be globally set with the compare function to use, but it can be 
-		## locally set as well, so that when the final is produced the use can see for particular sections
-		## or instances of a particular object, what other algorthms would have produced. Then this function here
-		## that I'm trying to write would be something best suited as a method to the class
-		## because then you could actually call the method on a single section at a time in order to change a single
-		## section's image. 
-
-		#choose_match(master, (h_section,w_section), sourceImgObjectList, opts = dict() )
-
-		# def choose_match(masterGrid,(row,col),sourceImgObjList):
-		## Sort the sourceImgObjList based on the error and... 
-		#sourceImgObjList.sort(key=lambda x: x.error)
-		## (for now) take the first one (least error) and add it to the master grid as the best match!		
-		#master.grid[h_section][w_section].currentMosaicImage = sourceImgObjList[ int(random()*global_opts_dict['random_max']) ]		
 
 
-	## Ok so the grid class can have a default comparison method, but you can override it with 
-	## a different one from the CompareImages class or something. 
+	## create the mosaic! - Stil working on what should get it's own arg, what should go in opts dict. etc.
 	def create( 	self 							, 
 					piece_list						, 
 
@@ -421,17 +368,26 @@ class Mosaic:
 					f 					= 2 		,
 					rgb_weighting		= (1,1,1)	,
 					random_max			= 0			,
+					neighborhood_size	= 1 		,
 					opts 				= dict()	, 	):
+
+		''' Create a mosaic - you can use custom comparison functions! '''
 
 		## How long does it take!
 		start = datetime.utcnow()
 
-		## If a default comparison function is not given, use the default one. 
+		## If a default comparison function is not given, use the default one. Is there is an easier way to do this?
 		comparison_function = self.compare_default if comparison_function is None else comparison_function
 
 		## Because I'm currently using a single piece_list and just having it chill in memory
 		## I need to flush the pre-calculated stuff out of it before starting a new mosaic
 		## but the piece_list isn't an attribute of the mosaic object, so this feels dirty. 
+		## ACTUALLY this should be taken care of with the comparion function? but how would that work?
+		## maybe I need to tell the compare function when a new mosaic is being created? 
+		## Because if I'm giving people the ability to write custom functions, really they should be 
+		## able to save whatever stuff they want to the pieces. 
+		## Maybe I could use some sort of decorator function? I mean I could go through all the attributes
+		## and remove ones that aren't in a list?
 		for piece in piece_list.pieces:
 			if hasattr(piece, 'rgb_avg'):
 				delattr(piece, 'rgb_avg')
@@ -445,17 +401,17 @@ class Mosaic:
 			for w_section in range(self.w_sections):
 		
 				for i in range(len(piece_list.pieces)):
-					e = comparison_function( 	self.grid[h_section][w_section]				,
-												piece_list.pieces[i] 								, 
-												f 					= f 					, 
-												rgb_weighting 		= rgb_weighting			, 
-												random_max 			= random_max			, 
-												opts 				= opts 					,	)
+					e = comparison_function( 	self.grid[h_section][w_section]			,
+												piece_list.pieces[i] 					, 
+												f 					= f 				, 
+												rgb_weighting 		= rgb_weighting		, 
+												first 				= i==0				,
+												opts 				= opts 				,	)
 					
 
-				## Right now sourceImgObjList is the same between iterations of this loop and the error is getting
+				## Right now piece_list is the same between iterations of this loop and the error is getting
 				## reset each time. I feel like trying to save all the error results would be too much information. 
-				self.choose_match( (h_section,w_section), piece_list.pieces, opts )
+				self.choose_match( (h_section,w_section), piece_list.pieces, random_max, neighborhood_size, opts )
 
 		print ("That took "+ str((datetime.utcnow() - start).total_seconds()) +" seconds")
 
@@ -465,24 +421,33 @@ class Mosaic:
 							obj2 						,
 							f 				= 2 		,
 							rgb_weighting 	= (1,1,1)	,
-							random_max 		= 0 		,
+							first 			= True  	,
 							opts 			= dict()	,	):
 
 
 		return ImageComparison.rgb_avg_comparison(	obj1 							,
-												obj2 							, 
-												f 				= f 			,
-												rgb_weighting 	= rgb_weighting ,
-												random_max  	= random_max 	, 
-												opts 			= opts 			,	)
+													obj2 							, 
+													f 				= f 			,
+													rgb_weighting 	= rgb_weighting ,
+													first 			= first 		,
+													opts 			= opts 			,	)
 	
 
+
+	## I'm going to use filename for now, probably will regret that, but I don't care at the moment?
+	## maybe try using image data instead? both have downsides I think. 
+	## Anyway, the main thing it needs is a mosaic image object to be passed to it
+	## This object, for now, needs a file name.
+	## then it goes through all the sections of the mosaic and if a piece has the same filename as the one
+	## you want to remove, than BAM, find a new match for that section.
+	## That means this function also needs information on how to find the new matches! 
+	## i.d. compare function, random max, weather or not to enforce neighbor constraints?
+	## true I could make that a variable!
+	def remove_instance():
+		''' remove all instances of a particular piece from a mosaic '''
+		pass
+
 ## END MOSAIC CLASS
-
-
-
-
-
 
 
 
@@ -512,6 +477,9 @@ class Mosaic:
 ## Operations you perform on obj1 and obj2 can be saved between sections of the target image
 ## by just adding reusable results as attributes to the objects and checking for the existence 
 ## of the attribute before calculating, this is apparently related to the idea of memo-ization
+## BUT beware that if you add something to objects in piece list and the create method
+## of the Mosaic class is called again your reusable results will still be there
+## So it would also be useful for your function to look at the 'first' parameter
 
 ## was mm_compare
 class ImageComparison:
@@ -519,24 +487,54 @@ class ImageComparison:
 	def __init__(self):
 		return None
 
+
+	def test( 	obj1 							, 
+				obj2 							, 
+				f 				= 2 			, 
+				rgb_weighting 	= (1,1,1)		, 
+				first 			= True  		,
+				opts 			= dict() 		,	):
+
+
+		if first:
+			if hasattr(obj1,'piece_sized_section_rgb_data'):
+				delattr(obj1, 'piece_sized_section_rgb_data')
+
+		obj2.error = None
+		error = 0
+
+		if not hasattr(obj1, 'piece_sized_section_rgb_data'):
+			if obj1.img.size != obj2.img.size:
+				obj1.piece_sized_section_rgb_data = np.asarray(obj1.img.resize(obj2.img.size))
+			else:
+				obj1.piece_sized_section_rgb_data = obj.rgb_data
+
+		error = np.absolute(obj1.piece_sized_section_rgb_data - obj2.rgb_data).sum()
+		obj2.error = error
+		return error
+
 	## This is the simplest form of comparison I could think of
 	## The average rgb value of obj1 and ob2 are calculated (thanks numpy for making that so easy)
 	## and the error is calculated as the sum of the absolute values of the difference between the
 	## r,g, and b values of those two averages. 
 	def rgb_avg_comparison( obj1 							, 
 							obj2 							, 
- 
 							f 				= 2 			, 
 							rgb_weighting 	= (1,1,1)		, 
-							random_max 		= 1 			, 
-
+							first 			= True  		,
 							opts 			= dict() 		,	):
+
+
+		if first:
+			if hasattr(obj1,'rgb_avg'):
+				delattr(obj1, 'rgb_avg')
+			if hasattr(obj2,'rgb_avg'):
+				delattr(obj2, 'rgb_avg')
 
 		## reset the obj2 error just in case anything crazy happens
 		obj2.error = None
+		
 		error = 0
-		#f = opts['f']
-
 		rgb_error_weight_array = np.array([rgb_weighting[0],rgb_weighting[1],rgb_weighting[2]])
 
 		## This part of the comparison functions will be the same for many of them, how to factor it. 
@@ -567,15 +565,19 @@ class ImageComparison:
 
 	def luv_comparison( 	obj1 							, 
 							obj2 							, 
- 
 							f 				= 2 			, 
 							rgb_weighting 	= (1,1,1)		, 
-							random_max 		= 1 			, 
-
+							first 			= True 			, 
 							opts 			= dict() 		,	):
 		
-		## Use the formula found here:
+		## Using the formula found here:
 		## https://www.compuphase.com/cmetric.htm
+
+		if first:
+			if hasattr(obj1,'rgb_avg'):
+				delattr(obj1, 'rgb_avg')
+			if hasattr(obj2,'rgb_avg'):
+				delattr(obj2, 'rgb_avg')
 
 		## reset the obj2 error just in case anything crazy happens
 		obj2.error = None
@@ -598,7 +600,6 @@ class ImageComparison:
 
 		## Should I check here to make sure the lists are the same length?
 		for i in range(len(obj1.rgb_avg)):
-			#error += sum( np.absolute(obj1.rgb_avg[i] - obj2.rgb_avg[i]) * rgb_error_weight_array )
 		
 			r_mean = (obj1.rgb_avg[i][r]+obj2.rgb_avg[i][r])/2
 			r_diff = obj1.rgb_avg[i][r]-obj2.rgb_avg[i][r]
@@ -625,7 +626,11 @@ class ImageComparison:
 class PieceList:
 	def __init__(self,arg):
 		
-		self.accepted_filetypes = PIECE_ACCEPTED_FILETYPES
+		start = datetime.utcnow()
+
+		self.__default_save_size = PIECE_DEFAULT_SAVE_SIZE
+
+		self.__accepted_filetypes = PIECE_ACCEPTED_FILETYPES
 
 		if os.path.isdir(arg):
 			self.directory = arg
@@ -633,6 +638,7 @@ class PieceList:
 		else:
 			self.pieces = []
 
+		print ("That took "+ str((datetime.utcnow() - start).total_seconds()) +" seconds")
 
 	def __create_piece_list_from_directory(self, directory):
 
@@ -642,16 +648,22 @@ class PieceList:
 
 		for item in items:	
 			extension = os.path.splitext(item)[-1]
-			if extension in self.accepted_filetypes:
+			if extension in self.__accepted_filetypes:
 		
 				piece_pillow_image = Image.open( directory + item )
 				piece_mosaic_image = MosaicImage(piece_pillow_image)
-				piece_mosaic_image.img_crop_center()
-				piece_mosaic_image.resize_to_piece_default_save_size()
 
-				# I hard coded some stuff dealing with 3 layer images, sorry. 
-				if piece_mosaic_image.rgb_data_shape[2] == 3:
-					pieces.append(piece_mosaic_image)
+				try:
+					piece_mosaic_image.to_thumbnail()
+
+					# I hard coded some stuff dealing with 3 layer images, sorry. 
+					if piece_mosaic_image.rgb_data_shape[2] == 3:
+						pieces.append(piece_mosaic_image)
+
+				except SyntaxError as err:
+					print(err)
+					print('There was a problem thumbnailing '+piece_pillow_image.filename)
+
 		
 		if len(pieces) == 0:
 			print("WARNING: No pieces were found in the given directory.")
@@ -665,14 +677,22 @@ class PieceList:
 	
 
 	def save(self, directory):
+		start = datetime.utcnow()
 		os.makedirs(directory) if not os.path.exists(directory) else None
 		
 		for piece in self.pieces:
 			filename = piece.original_image.filename.split('/')[-1]
+			fileext  = os.path.splitext(filename)[-1]
+			filename = filename[0:-1*len(fileext)]+fileext
 			filepath = os.path.join(directory,filename)
-			piece.img.save(filepath) 
 
+			##savepath = os.path.splitext(piece.original_image.filename)[0]+'-tn'+os.path.splitext(piece.original_image.filename)[1]
+			if hasattr(piece, 'exif'):
+				piece.img.save(filepath, quality = 99, exif = piece.exif)
+			else:
+				piece.img.save(filepath, quality = 99)
 
+		print ("That took "+ str((datetime.utcnow() - start).total_seconds()) +" seconds")
 
 
 

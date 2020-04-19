@@ -5,7 +5,7 @@ import os
 import mosaic_maker as mm
 
 
-if False:
+if True:
 	## Some Directories
 	# 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/'
 	# 'C:/Users/wants/Projects/Code/MosaicMakerImages/zzarchivedsearches/People/'
@@ -14,10 +14,14 @@ if False:
 
 	## Create a piece_list (The result should be a list of MosaicImage objects that have
 	## been cropped as squares and resized to the default piece size. )
-	piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/' )
+	print('Making the peice list')
+	# piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/' )
+	# piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/JamesMosaicClimbingProject/James/pieces/' )
+	# piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/JamesMosaicClimbingProject/2101-2400-pieces/' )
+	piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/Woah/NoClimbing/pieces/' )
 
 	## An image to turn into a mosaic
-	base_image_filepath = 'C:/Users/wants/Projects/Code/MosaicMakerImages/James/JamesRx/JamesRx.jpg'
+	base_image_filepath = 'C:/Users/wants/Projects/Code/MosaicMakerImages/JamesMosaicClimbingProject/James.png'
 
 	## A MosaicImage object is just a wrapper for a pillow image object.
 	## At some point I want the MosaicImage class to allow for a filepath as well.
@@ -25,22 +29,29 @@ if False:
 
 	## Create a mosaic object, specify how many sections you want along the shorter dimension using the granularity.
 	## At some point I want the Mosaic class to accept filepath, pillow image object, or mosaic image object as first arg. 
-	master = mm.Mosaic(target_image, granularity=1/5, opts=dict())
+	master = mm.Mosaic(target_image, granularity=1/10, opts=dict())
 
 	## Create a mosaic! - requires a piece list - a list of mosaic image objects to fill in the mosaic. 
 	## determine how many subsections of each section you'll look at using f
 	## I want to be able to pass piece_list to this, not piece_list.pieces 
-	master.create(piece_list, f=1, opts=dict())
+	print('Creating the mosaic')
+	master.create(piece_list, 
+					f = 1, 
+					comparison_function = mm.ImageComparison.test, 
+					random_max = 1,
+					neighborhood_size = 1, 
+					opts = dict())
 
 	## Save your hard work - will by default save to a subdirectory of the target image.
 	## And you, uhhhh, actually can't change that behavior at the moment, lol. 
+	print('Saving the mosaic to disc')
 	output_image_filepath = master.output_to_image()
 
 
 ## EXAMPLES!
 
 ## Create a mosaic of an image using pieces of itself. 
-if True:
+if False:
 	target_image = 'C:/Users/wants/Projects/Code/MosaicMakerImages/James/JamesRx/JamesRx.jpg'
 	master = mm.Mosaic(target_image, granularity=1/16)
 	piece_list_directory = master.save_sections()
