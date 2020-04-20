@@ -197,6 +197,10 @@ class Mosaic:
 	## I think this function should also make a database entry so you can recreate it later!
 	## thie method also needs the ability to save all the images it needs in the images directory
 	## There is also no css file currently created with this function. 
+
+	## Consider saving the target image in with the html save and adding a div and image container and chaging the z-index and opacity
+	## it's cheating, but it makes it look amazing, 0.32 for the opacity is a good default. 
+
 	def output_html(self):
 
 		start = datetime.utcnow()
@@ -230,6 +234,11 @@ class Mosaic:
 
 
 			with tag('body'):
+	
+				with tag('div', id='targetImageContainer'):
+
+					doc.stag('img', src='target.png')
+
 				with tag('div', klass='imageContainer'):
 					
 					for i in range(self.h_sections):
@@ -245,42 +254,56 @@ class Mosaic:
 		with open(html_output_filepath, 'w') as fh:
 			output = indent(doc.getvalue())
 			fh.write(output)
-
+			image_container_width = self.w_sections * 40
 
 		css_text = '''
-						* {box-sizing:border-box;}
-					    body {background:black;
-					        	color:white; 		}
-					    .imageContainer {
-					    		overflow:hidden;
-					        	border:2p solid black;
-					        	margin:0 auto;
-					        	padding:15px; 		}
-					    img {padding:0px;
-					        	margin:0px;
-								height:20px;
-								width:20px;			}
-						.row {width:100%;
-								padding:0px;
-								margin:0px;			}						
-						/* Clear floats after image containers */
-						.row::after {clear: both;
-								content: "";
-								display:block;		}
-						.col {float: left;
-								padding: 0px;
-								margin:0px;
-								height:20px; 		}	
-					'''
+* {{box-sizing:border-box;}}
+body {{background:black;
+	color:white;
+	padding:0;
+	margin:0;
+	border:0;}}
+#targetImageContainer{{
+	position:absolute;
+	z-index:10;}}
+#targetImageContainer img{{
+	opacity:0.32;
+	width:{image_container_width}px;}}	
+.imageContainer {{overflow:hidden;
+	position:absolute;
+	border:0;
+	margin:0;
+	padding:0;
+	width:{image_container_width}px;}}
+.col img {{padding:0px;
+	margin:0px;
+	height:40px;
+	width:40px;}}
+.row {{width:100%;
+	padding:0;
+	margin:0;}}
+/* Clear floats after image containers */
+.row::after {{clear: both;
+	content: "";
+	display:block;}}
+.col {{float: left;
+	padding: 0px;
+	margin:0px;
+	height:40px;}}'''
+
+		css_text = css_text.format(image_container_width = image_container_width)
 
 		with open(css_output_filepath, 'w') as fh:
 			fh.write(css_text)
 
-
+		## Sve the necessary items. Wait I thought the pieces class had a method for this?
 		for item in self.unique_pieces:
 			im = Image.open(item.piece.original_image.filename)
 			im_name = item.piece.original_image.filename.split('/')[-1]
 			im.save(pieces_save_directory+im_name)
+
+		## Save the target in there with everyone!
+		self.target.img.save(html_save_directory+'target.png')
 
 		return html_output_filepath
 
@@ -443,8 +466,12 @@ class Mosaic:
 	## That means this function also needs information on how to find the new matches! 
 	## i.d. compare function, random max, weather or not to enforce neighbor constraints?
 	## true I could make that a variable!
-	def remove_instance():
+	def remove_all_instances_of(self):
 		''' remove all instances of a particular piece from a mosaic '''
+		pass
+
+	def remove_all_but_this_instance_of(self):
+		''' remove all instance of a particular piece from a mosaic EXCEPT the one(s?) given '''
 		pass
 
 ## END MOSAIC CLASS
@@ -487,14 +514,13 @@ class ImageComparison:
 	def __init__(self):
 		return None
 
-
-	def test( 	obj1 							, 
-				obj2 							, 
-				f 				= 2 			, 
-				rgb_weighting 	= (1,1,1)		, 
-				first 			= True  		,
-				opts 			= dict() 		,	):
-
+	## This function takes foooooreeeeeeeever
+	def subtract_image_data( 	obj1 							, 
+								obj2 							, 
+								f 				= 1 			, 
+								rgb_weighting 	= (1,1,1)		, 
+								first 			= True  		,
+								opts 			= dict() 		,	):
 
 		if first:
 			if hasattr(obj1,'piece_sized_section_rgb_data'):
@@ -623,6 +649,9 @@ class ImageComparison:
 ## At some point I want the piece list to be determined more elegantly
 ## likely from the response of a database query, but we'll get there
 ## when we get there. 
+
+## implement groups so that neighbors can act on groups. 
+
 class PieceList:
 	def __init__(self,arg):
 		
