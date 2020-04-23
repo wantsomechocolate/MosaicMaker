@@ -19,6 +19,16 @@ DEFAULT_SAVE_PATH = 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/'
 DB_LOCATION_GLOBAL = 'C:/Users/wants/Projects/Code/MosaicMakerImages/mosaicmaker_db.sqlite'
 # DB_LOCATION = os.environ("MOSAIC_MAKER_DB_LOCATION")
 
+
+
+## I've learned that building the image library is very important
+## finding duplicates in both filename and actual image data
+## solve the rotating image problem
+## save original aspect ratio so individual photos can be slide either up/down or left/right, or I guess zoomed in on? hahaha
+
+
+
+
 #####################################################################################
 ## FUNCTION RELATED TO CSE API
 #####################################################################################
