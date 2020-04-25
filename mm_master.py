@@ -1,64 +1,65 @@
 #! python3
 
-from PIL import Image
-import os
+## This is a stop sign
+# from PIL import Image
+
+## mah imports
 import mosaic_maker as mm
-import wantsomechocolate as wsc
-
-## I need to figure out why I can't reuse a master to make a new mosaic
-## it complains about NoneType not having and error attribute in the choose_match function. 
-## it's because the first time it goes to sort pieces list the very first time it's running I think is the problem. 
-
+import comparison_functions as cf
 
 if True:
-	## Some Directories
-	# 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/'
-	# 'C:/Users/wants/Projects/Code/MosaicMakerImages/zzarchivedsearches/People/'
-	# 'C:/Users/wants/Projects/Code/MosaicMakerImages/Anqi/Anqi-01/sections/'
-	# 'C:/Users/wants/Projects/Code/MosaicMakerImages/JamesGrandfatheredIn/JamesSquare/sections/'
 
+	## PIECE LIST
 	## Create a piece_list (The result should be a list of MosaicImage objects that have
 	## been cropped as squares and resized to the default piece size. )
-	piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/' )
+	piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/image_sources/zztemepdb/' )
 	# piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/JamesMosaicClimbingProject/James/pieces - best/' )
-	# piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/JamesMosaicClimbingProject/2101-2400-pieces/' )
 	# piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/Woah/NoClimbing/pieces/' )
 
-	## An image to turn into a mosaic
-	# base_image_filepath = 'C:/Users/wants/Projects/Code/MosaicMakerImages/James/JamesBalloon/JamesBalloon.jpg'
-	base_image_filepath = 'C:/Users/wants/Projects/Code/MosaicMakerImages/Miho/CloseUp/CloseUp.jpg'
+	## TARGET IMAGE
+	base_image_filepath = 'C:/Users/wants/Projects/Code/MosaicMakerImages/mosaics/Joyce/Joyce/Joyce.png'
 	# base_image_filepath = 'C:/Users/wants/Projects/Code/MosaicMakerImages/JamesMosaicClimbingProject/James.png'
 	# base_image_filepath = 'C:/Users/wants/Projects/Code/MosaicMakerImages/Woah/Smirk/SmirkCloseUp.jpg'
 
 	## A MosaicImage object is just a wrapper for a pillow image object.
 	## At some point I want the MosaicImage class to allow for a filepath as well.
-	target_image = mm.MosaicImage( Image.open( base_image_filepath ) )
+	target_image = mm.MosaicImage( base_image_filepath )
 
+	## MOSAIC OBJECT
 	## Create a mosaic object, specify how many sections you want along the shorter dimension using the granularity.
 	## At some point I want the Mosaic class to accept filepath, pillow image object, or mosaic image object as first arg. 
-	master = mm.Mosaic(target_image, granularity=1/5, opts=dict())
+	#comparison_function = cf.build_comparison_function(cf.reduce_functions.average, cf.error_functions.rmse)
 
-	## Create a mosaic! - requires a piece list - a list of mosaic image objects to fill in the mosaic. 
-	## determine how many subsections of each section you'll look at using f
-	
-	master.create(piece_list 						, 
-					#f  					= 2			, 
-					#comparison_function = mm.ImageComparison.rgb_avg_comparison, 
-					#random_max 			= 0			,
-					#neighborhood_size 	= 1			, 
-					opts 				= dict() 	, )
+	master = mm.Mosaic(
+		target_image, 
+		granularity=1/50, 
+		#comparison_function=comparison_function,
+		reduce_function=cf.reduce_functions.average,
+		error_function=cf.error_functions.sum_abs_error, 
+		f=3,
+		
+		neighborhood_size = 5,
+		random_max=0,
+		opts=dict(num_clusters = 15) )
+
+	## I still want to give the option to override the comparison function, but how do I want to do it and is it worth it?
+	## Because you can just change it on the mosaic? and do I really want to get the 
+	## function to use from each section? That would pretty nuts. 
+	master.create(piece_list, opts= dict() )
 
 	## Save your hard work - will by default save to a subdirectory of the target image.
 	## And you, uhhhh, actually can't change that behavior at the moment, lol. 
-	# master.output_html()
+	#master.output_html()
 	master.output_to_image()
 
+	print("round two")
+	master.rgb_weighting=(0.5,1,1)
+	master.create(piece_list, opts= dict() )
+	master.output_to_image()
 
+## SOME MORE EXAMPLES!
 
-
-## EXAMPLES!
-
-## Make a mosaic, change settings, make another
+## Loop through setting and note the time that it takes for a bunch of different ones
 if False:
 	piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/' )
 	np = len(piece_list.pieces)
@@ -94,7 +95,7 @@ if False:
 		master.output_to_image( dict(filename = "F={f} NS={ns} R={r} G={g} CF={cf} NP={np}.png".format( f=f, ns=ns, r=r, g=g, cf=cf, np=np ) ) ) 
 
 
-## Change the default thumbnail size and use a different folder
+## Change the default thumbnail size
 if False:
 	mm.PIECE_DEFAULT_SAVE_SIZE = (512,512)
 	piece_list = mm.PieceList( 'C:/Users/wants/Projects/Code/MosaicMakerImages/JamesMosaicClimbingProject/James/pieces - best/' )
@@ -106,17 +107,17 @@ if False:
 	master.output_to_image()
 
 
-## Create a mosaic of an image using pieces of itself. 
+## Create a mosaic of an image using pieces of itself. I think this one is fun. 
 if False:
 	mm.PIECE_DEFAULT_SAVE_SIZE = (128,128)
-	target_image = 'C:/Users/wants/Projects/Code/MosaicMakerImages/Woah/SLC/WoahAndAng.jpg'
-	master = mm.Mosaic(target_image, granularity=1/16)
+	target_image = 'C:/Users/wants/Projects/Code/MosaicMakerImages/Joyce/Joyce/Joyce.png'
+	master = mm.Mosaic(target_image, granularity=1/4, f=1)
 	piece_list_directory = master.save_sections()
 	piece_list = mm.PieceList( piece_list_directory )
 
 	## I should just be cable to change the granularity and have the object recalculate sections?
-	master = mm.Mosaic(target_image, granularity=1/32)
-	master.create(piece_list, f=5)
+	master.granularity=1/2
+	master.create(piece_list)
 	master.output_to_image()
 
 
@@ -127,7 +128,7 @@ if False: # make a mosaic, save the output to an image and then add an overlay o
 	target_image = mm.MosaicImage( Image.open( base_image_filepath ) )
 	master = mm.Mosaic(target_image, granularity=1/10, opts=dict())
 	master.create(piece_list,f=1,random_max=0,neighborhood_size=0)
-	master.output_to_image(dict(overlay_alpha = 100))
+	master.output_to_image(dict(overlay_alpha = 100)) ## 0 to 255
 
 	# base = Image.open('C:/Users/wants/Projects/Code/MosaicMakerImages/Miho/CloseUp/CloseUp/mosaics/1587624603.png')
 	# overlay = Image.open('C:/Users/wants/Projects/Code/MosaicMakerImages/Miho/CloseUp/CloseUp.jpg')

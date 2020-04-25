@@ -16,7 +16,8 @@ from yattag import Doc
 from yattag import indent
 
 import wantsomechocolate as wsc
-
+#from comparison_functions import error_functions, reduce_functions, rgb_avg_comparison
+import comparison_functions as cf
 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
@@ -120,7 +121,7 @@ class MosaicImage:
 
 	## just a wrapper for resize that knows about the default save size.
 	def resize(self,size = PIECE_DEFAULT_SAVE_SIZE):
-		if self._img.size == PIECE_DEFAULT_SAVE_SIZE:
+		if self._img.size == size:
 			pass
 		else:	
 			self._img = self._img.resize(size)
@@ -132,271 +133,6 @@ class MosaicImage:
 		self.img_crop_center()
 		self.resize(size)
 
-
-
-
-
-
-
-
-
-## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
-# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
-## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
-
-
-## COMPARISON FUNCTIONS
-## All comparison functions should take two objects and an optional dictionary of options
-## These two objects can be expected to have three attributes
-##		img      - the PIL image object
-## 		rgb_data - a numpy array with color data
-##		error    - the default is None
-##
-## obj1 is a section of the target image
-## obj2 is an image from the set of images used to create the mosaic
-##
-## The comparison function is expected to compare obj1 and obj2 and 
-## update the error attribute of obj2 (that's TWO) with a single numerical value indicative of similarity
-## 
-## For a given target image section, once all "obj2" have been compared, they are sorted on error
-## and a decent match is selected from the list 
-## 
-## NOTE:
-## Operations you perform on obj1 and obj2 can be saved between sections of the target image
-## by just adding reusable results as attributes to the objects and checking for the existence 
-## of the attribute before calculating, this is apparently related to the idea of memo-ization
-## BUT beware that if you add something to objects in piece list and the create method
-## of the Mosaic class is called again your reusable results will still be there
-## So it would also be useful for your function to look at the 'first' parameter
-
-
-## i ran into a problem where in order to keep the freedom to name attributes with reusable 
-## image data calculations, the error calc function needs to know that the final output thing is called,
-## do I just standardize the name of that, or do I include the calculation of the error AND it's 
-## setting onto obj2 in with the comparison function?, then the reduce function needs to be given 
-## the error calc function to use.
-class ImageComparison:
-
-	def rgb_avg_comparison( obj1 							, 
-							obj2 							, 
-							f 				= 2 			, 
-							rgb_weighting 	= (1,1,1)		, 
-							first 			= True  		,
-							reset_obj1		= True 			,
-							reset_obj2 		= True 			,
-							opts 			= dict() 		,	):
-
-
-		obj1_data, obj2_data = ImageComparison.ReduceFuncs.average( 
-							obj1 							, 
-							obj2 							, 
-							f 				= f 			, 
-							rgb_weighting 	= rgb_weighting	, 
-							first 			= first 		,
-							reset_obj1		= reset_obj1	,
-							reset_obj2 		= reset_obj2	,
-							opts 			= opts 			,	)
-
-		error = ImageComparison.ErrorFuncs.sum_abs_error(
-							obj1_data 						, 
-							obj2_data 						, 
-							rgb_weighting 					,	)
-
-		obj2.error = error
-
-		return error
-
-
-	class ReduceFuncs:
-		def __init__(self):
-			self.default = self.average
-
-
-		def average( 	obj1 							, 
-						obj2 							, 
-						f 				= 2 			, 
-						rgb_weighting 	= (1,1,1)		, 
-						first 			= True  		,
-						reset_obj1		= True 			,
-						reset_obj2 		= True 			,
-						opts 			= dict() 		,	):
-
-			if reset_obj1:
-				if hasattr(obj1,'rgb_avg'):
-					delattr(obj1, 'rgb_avg')
-			if reset_obj2:
-				if hasattr(obj2,'rgb_avg'):
-					delattr(obj2, 'rgb_avg')
-
-			## reset some stuff
-			obj2.error = None
-			error = 0
-			
-			## put rgb weighting into numpy array to make it easy to work with if you need it. 
-			rgb_error_weight_array = np.array(rgb_weighting)
-
-			## This part of the comparison functions will be the same for many of them, how to factor it?
-			if not hasattr(obj1,"rgb_avg"):
-				obj1.rgb_avg = []
-				for i in range(f):
-					for j in range(f):
-						obj1.rgb_avg.append( np.mean( obj1.rgb_data[ int(obj1.height/f)*i : int(obj1.height/f)*(i+1) , int(obj1.width/f)*j  : int(obj1.width/f)*(j+1) , : ], axis=(0,1) ) )
-
-			if not hasattr(obj2,"rgb_avg"):
-				obj2.rgb_avg = []
-				for i in range(f):
-					for j in range(f):
-						obj2.rgb_avg.append( np.mean( obj2.rgb_data[ int(obj2.height/f)*i : int(obj2.height/f)*(i+1) , int(obj2.width/f)*j  : int(obj2.width/f)*(j+1) , : ], axis=(0,1) ) )
-
-			return obj1.rgb_avg, obj2.rgb_avg
-
-		def dominant():
-			pass
-
-	class ErrorFuncs:
-		
-		def __init__(self):
-			self.default = self.rmse
-			#self.rgb_error_weight_array = np.array(1,1,1)
-		
-
-		def rmse(list_of_array_1,list_of_array_2,rgb_error_weight_array):
-			error=0
-			for i in range(len( list_of_array_1 )):
-				error += np.sqrt( np.mean( np.square( ( list_of_array_1[i] - list_of_array_2[i] ) * rgb_error_weight_array ) ) )
-			return error
-
-
-		def luv_low_cost_approx(list_of_array_1,list_of_array_2,rgb_error_weight_array):
-			error=0
-			r,g,b = 0,1,2
-			for i in range(len( list_of_array_1 )):
-
-				weighted_1=list_of_array_1[i]*rgb_error_weight_array
-				weighted_2=list_of_array_2[i]*rgb_error_weight_array
-
-				r_mean = (weighted_1[r]+weighted_2[r])/2
-				r_diff = weighted_1[r]-weighted_2[r]
-				g_diff = weighted_1[g]-weighted_2[g]
-				b_diff = weighted_1[b]-weighted_2[b]
-
-				error += ( (2+(r_mean/256))*r_diff**2 + 4*g_diff**2 + (2+((255-r_mean)/256))*b_diff**2 )**0.5
-			return error
-
-
-		def sum_abs_error(list_of_array_1,list_of_array_2,rgb_error_weight_array):
-			
-			error=0
-			for i in range(len( list_of_array_1 )):
-				error += sum( np.absolute(list_of_array_1[i] - list_of_array_2[i]) * rgb_error_weight_array )
-			return error
-
-
-
-
-
-
-
-
-
-
-
-
-
-	## Maybe make some functions here that take two lists of distilled rgb data and return the total error value?
-	## then call these functions from the compare functions?
-	## Do I also want to have one giant compare function that also calls the avg vs dom thing?
-	## then with just parameters I can do dom luv, avg rmse, etc, etc?
-	## sounds good to me. 
-
-
-	## Comparison functions that dont loop through subsections,
-	## I thought maybe numpy did some really efficient stuff for subtracting image data that
-	## I could take advantage of to avoid looping through subsections, but it appears that 
-	## it's not going to work out really. 
-	## Because this function takes foooooreeeeeeeever, even with just a 10x10 grid. 
-	## I might try running it for a whole day or something though to see how the results come out. 
-	def subtract_image_data( 	obj1 							, 
-								obj2 							, 
-								f 				= 1 			, 
-								rgb_weighting 	= (1,1,1)		, 
-								first 			= True  		,
-								reset_obj1		= True 			,
-								reset_obj2 		= True 			,
-								opts 			= dict() 		,	):
-
-		if reset_obj1:
-			if hasattr(obj1,'piece_sized_section_rgb_data'):
-				delattr(obj1, 'piece_sized_section_rgb_data')
-
-		obj2.error = None
-		error = 0
-
-		if not hasattr(obj1, 'piece_sized_section_rgb_data'):
-			if obj1.img.size != obj2.img.size:
-				obj1.piece_sized_section_rgb_data = np.asarray(obj1.img.resize(obj2.img.size))
-			else:
-				obj1.piece_sized_section_rgb_data = obj.rgb_data
-
-		error = np.absolute(obj1.piece_sized_section_rgb_data - obj2.rgb_data).sum()
-		obj2.error = error
-		return error
-
-
-
-	## this should be obsolete soon
-	def luv_comparison( 	obj1 							, 
-							obj2 							, 
-							f 				= 2 			, 
-							rgb_weighting 	= (1,1,1)		, 
-							first 			= True 			,
-							reset_obj1		= True 			,
-							reset_obj2 		= True 			,							 
-							opts 			= dict() 		,	):
-		
-		## Using the formula found here:
-		## https://www.compuphase.com/cmetric.htm
-
-		if reset_obj1:
-			if hasattr(obj1,'rgb_avg'):
-				delattr(obj1, 'rgb_avg')
-		if reset_obj2:
-			if hasattr(obj2,'rgb_avg'):
-				delattr(obj2, 'rgb_avg')
-
-		## reset the obj2 error just in case anything crazy happens
-		obj2.error = None
-		error = 0
-
-		r,g,b = 0,1,2
-
-		if not hasattr(obj1,"rgb_avg"):
-			obj1.rgb_avg = []
-			for i in range(f):
-				for j in range(f):
-					obj1.rgb_avg.append( np.mean( obj1.rgb_data[ int(obj1.height/f)*i : int(obj1.height/f)*(i+1) , int(obj1.width/f)*j  : int(obj1.width/f)*(j+1) , : ], axis=(0,1) ) )
-
-		if not hasattr(obj2,"rgb_avg"):
-			obj2.rgb_avg = []
-			for i in range(f):
-				for j in range(f):
-					obj2.rgb_avg.append( np.mean( obj2.rgb_data[ int(obj2.height/f)*i : int(obj2.height/f)*(i+1) , int(obj2.width/f)*j  : int(obj2.width/f)*(j+1) , : ], axis=(0,1) ) )
-
-
-		## Should I check here to make sure the lists are the same length?
-		for i in range(len(obj1.rgb_avg)):
-		
-			r_mean = (obj1.rgb_avg[i][r]+obj2.rgb_avg[i][r])/2
-			r_diff = obj1.rgb_avg[i][r]-obj2.rgb_avg[i][r]
-			g_diff = obj1.rgb_avg[i][g]-obj2.rgb_avg[i][g]
-			b_diff = obj1.rgb_avg[i][b]-obj2.rgb_avg[i][b]
-
-			error += ( (2+(r_mean/256))*r_diff**2 + 4*g_diff**2 + (2+((255-r_mean)/256))*b_diff**2 )**0.5
-
-
-		obj2.error = error
-
-		return error
 
 
 
@@ -412,7 +148,10 @@ class Mosaic:
 					image 							, 
 					granularity 		= 1/16 		, 
 		
-					comparison_function = ImageComparison.rgb_avg_comparison,
+					comparison_function = None 		,
+					reduce_function 	= None 		,
+					error_function 		= None 		,
+
 					f  					= 2 		, 
 					rgb_weighting 		=(1,1,1) 	, 
 					random_max 			= 0 		, 
@@ -424,9 +163,19 @@ class Mosaic:
 		self._granularity	 	= granularity
 		self.target 			= image
 
+
+		self.default_comparison_function = None #rgb_avg_comparison
+		self.default_reduce_function = cf.reduce_functions.average
+		self.default_error_function = cf.error_functions.sum_abs_error
+
+		## Defining the comparison function
+		self._comparison_function = comparison_function 
+		self._reduce_function = reduce_function
+		self._error_function = error_function
+		self.__process_comparison_function()
+
+
 		## Other variables defined here
-		self.comparison_function = comparison_function 
-		
 		self.f 					= f 				
 		self.rgb_weighting		= rgb_weighting		 
 		self.random_max			= random_max		 
@@ -492,19 +241,74 @@ class Mosaic:
 
 
 	## #########################################################################################
+	## COMPARISON RELATED FUNCTIONS
+	## #########################################################################################
+
+
+	def __process_comparison_function(self):
+		## If there is a comparison function passed it, do it up!
+		if self._comparison_function != None:
+			
+			#print("A comparison function was passed directly")
+
+			pass
+			
+		## if either of reduce or error is specified build the comparison function using the given info and defaults if necessary	
+		elif (self._reduce_function != None) or (self._error_function != None):
+			
+			#print("either a reduce or an error function (or both) were passed directly")
+			
+			self._reduce_function = self.default_reduce_function if self._reduce_function == None else self._reduce_function
+			self._error_function = self.default_error_function if self._error_function == None else self._error_function				
+			self._comparison_function = cf.build_comparison_function(self._reduce_function, self._error_function)
+
+		## if given nothing, use the default comparison function if the object has one I don't give it one
+		elif self.default_comparison_function != None:
+			
+			#print("No comparison functions were passed directly, using the class default for comparison function")
+			
+			self._comparison_function = self.default_comparison_function
+
+		## after all that, use the default reduce and error functions to build the comparison function. 
+		else:
+			
+			#print("No comparison functions were passed directly, using the class default for reduce and error functions")
+			
+			self._comparison_function = cf.build_comparison_function(self.default_reduce_function, self.default_error_function)
+
+
+	## These are all properties so that if you update the mosaic object 
+	## after initialization you still always have a valid comparison function to use. 
+	@property
+	def comparison_function(self):
+		return self._comparison_function
+	@comparison_function.setter
+	def comparison_function(self,value):
+		self._comparison_function = value
+		self.__process_comparison_function()
+
+	@property
+	def reduce_function(self):
+		return self._reduce_function
+	@reduce_function.setter
+	def reduce_function(self,value):
+		self._reduce_function = value
+		self.__process_comparison_function()
+
+	@property
+	def error_function(self):
+		return self._error_function
+	@error_function.setter
+	def error_function(self,value):
+		self._error_function = value
+		self.__process_comparison_function()
+
+
+	## #########################################################################################
 	## THE MAIN METHODS OF THIS CLASS
 	## #########################################################################################
 
-	'''
-	I want to be able to have people write their own comparison functions
-	I have found so far that comparison functions can be separated into two parts
-	Functions that produce distilled information about images
-	Functions that comcpare that distilled information
-	But what if someone just wants to create a function takes two objects and slaps an error on obj2?
-	I want to allow that as well. 
-	'''
-
-	## create the mosaic! - Stil working on what should get it's own arg, what should go in opts dict. etc.
+	## Debating on whether or not to let this function override settings in self
 	@wsc.timer
 	def create( 	self 			, 
 					piece_list		, 					
@@ -512,32 +316,22 @@ class Mosaic:
 
 		''' Create a mosaic - you can use custom comparison functions! '''
 
-		## If a comparison function is not given, use the default one. 
-		#comparison_function = ImageComparison.default if comparison_function is None else comparison_function
-
 		## WHERE THE MAGIC HAPPENS
-		## Compare each section to each piece
-		## This for loop is very common, how do I refactor it? for blah for blah do something, with arguments. 
+		## Compare each section to each piece 
 		for h_section in range(self.h_sections):
 			for w_section in range(self.w_sections):
-				for i in range(len(piece_list.pieces)):
-					
-					## This is getting broken up into two functions now, one to reduce the color data
-					## one to compare the result of that function. 
-					## the reason is because I want to have different functions for reducing
-					## e.g. average rgb, dominant rgb, or others,
-					## and different functions for comparing the result
-					## e.g. rmse, luv, sum_abs_diff
-					## the result will still be the same, all the items in piece_list will wind up with
-					## an error attribute that is a single numerical value.
 
-					e = self.comparison_function( 	self.grid[h_section][w_section]					,
+				## The goal is to assign a single numerical value to each piece indicating it's similarity to the current section
+				for i in range(len(piece_list.pieces)):
+					#print("")
+					#print("w_section: {w_section} - h_section: {h_section}".format(w_section=w_section, h_section=h_section) , end="")
+					#print("   i = {i}".format(i=i))
+					self.comparison_function( 		self.grid[h_section][w_section]					,
 													piece_list.pieces[i] 							, 
 													
 													f 					= self.f 					, 
 													rgb_weighting 		= self.rgb_weighting		,
 
-													first 				= h_section+w_section+i==0	, #very first iteration
 													reset_obj1			= i==0 						, #first iteration of a new section
 													reset_obj2 			= h_section+w_section==0	, #all iterations of the first section
 													
@@ -545,18 +339,20 @@ class Mosaic:
 					
 
 				## Right now piece_list is the same between iterations of this loop and the error is getting
-				## reset each time. I feel like trying to save all the error results would be too much information. 
+				## reset each time. I feel like trying to save all the error results would be too much information?
+				## I'm thinking of allowing users to override the choose match function, because then they wouldn't be 
+				## limited to using a single numerical value as the selection criteria. 
 				self.choose_match( (h_section,w_section), piece_list.pieces, self.random_max, self.neighborhood_size, opts )
 
 
 
 	## Someday I want to save the state of the pieces list for each section to have a quick ref of good alt matches
-	## I would use deep copy or something and depending on resources save the file path/id or the image data.  
+	## I would use deep copy or something and depending on resources save the file path/id or the image data?  
 	def choose_match(self, coordinates, pieces, random_max, neighborhood_size, opts = dict() ):
 		'''Choose the closest match that doesn't violate the neighbor constraint'''
 		
 		## Sort in the beginning because I think it makes later things faster. 
-		#pieces.sort(key=lambda x: (x.error is None, x.error))
+		pieces.sort(key=lambda x: (x.error is None, x.error))
 
 		neighbors = self.get_neighbors(coordinates, neighborhood_size) if neighborhood_size != 0 else []
 
@@ -566,15 +362,17 @@ class Mosaic:
 			if hasattr(neighbor,'piece'):
 				neighbor_mosaic_image = neighbor.piece
 
-				## Find where the neighbor's piece is in the pieces list. I didn't write this code myself. 
+				## Find where the neighbor's piece is in the pieces list. Straight from SO baby. 
 				piece = next((x for x in pieces if x.original_image.filename == neighbor_mosaic_image.original_image.filename), None)
 
 				## Update it's error to be nothing (and properly handle None on sort)
+				## I'm not particularly happy about how I'm handling this atm. 
 				piece.error = None
 
 		## Sort the list again, this time there will be some None - https://stackoverflow.com/a/18411610/1937423
 		pieces.sort(key=lambda x: (x.error is None, x.error))		
 		
+		## Take the best match (or perhaps with a random offset)
 		self.grid[coordinates[0]][coordinates[1]].piece = pieces[ int(random()*random_max) ]
 
 
@@ -583,6 +381,31 @@ class Mosaic:
 	## #########################################################################################
 	## Other helper functions
 	## #########################################################################################
+
+	## I tried to research a way of making this better, but apparently slicing is actually
+	## just an implementation of nested for loops?
+	def get_neighbors(self,coordinates, neighborhood_size = 1):
+
+		neighbors=[]
+
+		n_min_i = max( neighborhood_size * -1 , coordinates[0] * -1 )
+		n_max_i = min( neighborhood_size +  1 , self.h_sections - coordinates[0] )
+
+		n_min_j = max( neighborhood_size * -1 , coordinates[1] * -1 )
+		n_max_j = min( neighborhood_size +  1 , self.w_sections - coordinates[1] )
+
+		## Loop through all the neighbors that a particular section has.
+		for i_offset in range( n_min_i, n_max_i, 1 ): ## row or height
+			for j_offset in range( n_min_j, n_max_j, 1 ): ## column or width
+				if (i_offset != 0 or j_offset != 0): ## if you're not dealing with urself
+					
+					## get the neighbor from self
+					neighbor = self.grid[coordinates[0]+i_offset][coordinates[1]+j_offset]
+					neighbors.append(neighbor)
+
+		return neighbors
+
+
 
 	## I think I would rather this property return a unique object list?
 	## A unique list of objects based on a particular attribute though. Which I don't know how to do at the moment. 	
@@ -613,26 +436,7 @@ class Mosaic:
 		return self._unique_pieces
 
 		
-	def get_neighbors(self,coordinates, neighborhood_size = 1):
 
-		neighbors=[]
-
-		n_min_i = max( neighborhood_size * -1 , coordinates[0] * -1 )
-		n_max_i = min( neighborhood_size +  1 , self.h_sections - coordinates[0] )
-
-		n_min_j = max( neighborhood_size * -1 , coordinates[1] * -1 )
-		n_max_j = min( neighborhood_size +  1 , self.w_sections - coordinates[1] )
-
-		## Loop through all the neighbors that a particular section has.
-		for i_offset in range( n_min_i, n_max_i, 1 ): ## row or height
-			for j_offset in range( n_min_j, n_max_j, 1 ): ## column or width
-				if (i_offset != 0 or j_offset != 0): ## if you're not dealing with urself
-					
-					## get the neighbor from self
-					neighbor = self.grid[coordinates[0]+i_offset][coordinates[1]+j_offset]
-					neighbors.append(neighbor)
-
-		return neighbors
 
 	
 
@@ -692,25 +496,16 @@ class Mosaic:
 				doc.stag('meta', name='author', content='James McGlynn')
 				doc.stag('link', rel='stylesheet', href='mosaicStyle.css')
 
-
 			with tag('body'):
-	
 				with tag('div', id='targetImageContainer'):
-
 					doc.stag('img', src='target.png')
-
 				with tag('div', klass='imageContainer'):
-					
 					for i in range(self.h_sections):
-
 						with tag('div', klass='row', id='row-'+str(i)):
-					
 							for j in range(self.w_sections):
-
 								with tag('div', klass='col', id='cell-'+str(i)+'-'+str(j)):
 									doc.stag('img', src='pieces/'+self.grid[i][j].piece.original_image.filename.split('/')[-1])
 					
-		
 		with open(html_output_filepath, 'w') as fh:
 			output = indent(doc.getvalue())
 			fh.write(output)
@@ -767,7 +562,6 @@ body {{background:black;
 
 
 	## These mosaic output images can get massive, so I'm not making this a property
-	## Consider adding the ability to add a transparent overlay. Easier in html, but maybe good here, too?
 	@wsc.timer
 	def output_to_image(self,opts=dict()):
 
@@ -914,14 +708,6 @@ body {{background:black;
 
 
 
-
-
-
-
-
-
-
-
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
@@ -935,7 +721,7 @@ body {{background:black;
 ## likely from the response of a database query, but we'll get there
 ## when we get there. 
 
-## implement groups so that neighbors can act on groups. 
+## implement groups so that neighbors can act on groups? 
 
 ## right now the only thing is save and qty, besides piece list, qty is calculated, save is fine,
 ## so resetting piece list is currently ok, I guess, although I'm not sure why you would want to do that. 
@@ -968,7 +754,7 @@ class PieceList:
 				piece_mosaic_image = MosaicImage(piece_pillow_image)
 
 				try:
-					piece_mosaic_image.to_thumbnail()
+					piece_mosaic_image.to_thumbnail(size=self._default_save_size)
 
 					# I hard coded some stuff dealing with 3 layer images, sorry. 
 					if piece_mosaic_image.rgb_data_shape[2] == 3:
@@ -982,6 +768,16 @@ class PieceList:
 			print("WARNING: No pieces were found in the given directory.")
 
 		return pieces
+
+
+	@property
+	def default_save_size(self):
+		return self._default_save_size
+	@default_save_size.setter
+	def default_save_size(self,size):
+		self._default_save_size = size
+		for piece in self.pieces:
+			piece.to_thumbnail(size = self._default_save_size)
 
 
 	@property

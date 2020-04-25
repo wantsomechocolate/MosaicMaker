@@ -9,3 +9,8 @@ original_size == test.original_image.size
 
 ## rest img and do a similar thing...
 test.img = 'asdf'
+
+
+## Making sure all the comparison function stuff works
+
+## resetting the comparison function safter init for exampe. 
