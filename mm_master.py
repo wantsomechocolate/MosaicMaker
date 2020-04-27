@@ -40,12 +40,12 @@ if True:
 		
 		neighborhood_size = 5,
 		random_max=0,
-		opts=dict(num_clusters = 15) )
+		opts=dict() )
 
 	## I still want to give the option to override the comparison function, but how do I want to do it and is it worth it?
 	## Because you can just change it on the mosaic? and do I really want to get the 
 	## function to use from each section? That would pretty nuts. 
-	master.create(piece_list, opts= dict() )
+	master.create(piece_list, opts= dict(num_clusters = 15) )
 
 	## Save your hard work - will by default save to a subdirectory of the target image.
 	## And you, uhhhh, actually can't change that behavior at the moment, lol. 

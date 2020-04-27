@@ -24,7 +24,7 @@ import comparison_functions as cf
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
 ## Should come from a configuration at some point. 
-PIECE_DEFAULT_SAVE_SIZE = (128,128)
+PIECE_DEFAULT_SAVE_SIZE = (512,512)
 PIECE_ACCEPTED_FILETYPES = ['.png','.jpg']
 
 
@@ -342,13 +342,18 @@ class Mosaic:
 				## reset each time. I feel like trying to save all the error results would be too much information?
 				## I'm thinking of allowing users to override the choose match function, because then they wouldn't be 
 				## limited to using a single numerical value as the selection criteria. 
-				self.choose_match( (h_section,w_section), piece_list.pieces, self.random_max, self.neighborhood_size, opts )
+
+				## Hmmm, I think I might want to have choose match return the match instead of assigning directly to the 
+				## coordinate given?
+				self.choose_match( (h_section,w_section), piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=None, opts=opts )
 
 
 
 	## Someday I want to save the state of the pieces list for each section to have a quick ref of good alt matches
 	## I would use deep copy or something and depending on resources save the file path/id or the image data?  
-	def choose_match(self, coordinates, pieces, random_max, neighborhood_size, opts = dict() ):
+
+	## Maybe random should be allowed to be a tuple of (min,max)? or min,offset?
+	def choose_match(self, coordinates, pieces, random_max, neighborhood_size, blocklist=None, opts = dict() ):
 		'''Choose the closest match that doesn't violate the neighbor constraint'''
 		
 		## Sort in the beginning because I think it makes later things faster. 
@@ -356,6 +361,12 @@ class Mosaic:
 
 		neighbors = self.get_neighbors(coordinates, neighborhood_size) if neighborhood_size != 0 else []
 
+		## get_neighbors returns a list of mosaicmaker image objects so blocklist must also contain those, foo.
+		## there isn't a special object for the section of a mosaic grid. 
+		for item in blocklist:
+			neighbors.append(item)
+
+		## Change variable name?
 		for neighbor in neighbors:
 					
 			## does neighbor have a mosaic object chosen for itself yet?
@@ -437,7 +448,33 @@ class Mosaic:
 
 		
 
+	## #########################################################################################
+	## TOUCH UP FUNCTIONS
+	## #########################################################################################
 
+	## Should this be able to take a section, check to see if it has a piece attribute, then use that?
+	## if you pass this a section, it will, in most cases, do nothing. 
+	## This should probably be able to take a blocklist as well?
+	def update_all_instances_of(self,piece,piece_list,opts = dict()):
+		
+		## get all the sections that have this piece - this uses filename - do something better
+		sections=[]
+		piece_file_name = piece.original_image.filename.split('/')[-1]
+		for i in range(self.h_sections):
+			for j in range(self.w_sections):
+				if self.grid[i][j].piece.original_image.filename.split('/')[-1] == piece_file_name:
+					self.grid[i][j].coordinates = (i,j)
+					sections.append(self.grid[i][j])
+
+		## the items are pieces
+		for section in sections:
+			for i in range(len(piece_list.pieces)):
+				self.comparison_function(section,piece_list.pieces[i],f=self.f)
+
+			self.choose_match(section.coordinates, piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[section.piece], opts=opts )
+
+
+		return sections
 	
 
 
@@ -465,7 +502,7 @@ class Mosaic:
 	## Outputs html, css, a copy of target image, and necessary pieces to a child directory of the target image.  
 	## I think this function should also make a database entry so you can recreate it later!
 	@wsc.timer
-	def output_html(self):
+	def output_html(self,section_dim = 50):
 
 		start = datetime.utcnow()
 		timestamp = int(start.timestamp())
@@ -509,7 +546,8 @@ class Mosaic:
 		with open(html_output_filepath, 'w') as fh:
 			output = indent(doc.getvalue())
 			fh.write(output)
-			image_container_width = self.w_sections * 40
+			#section_size = 50
+			image_container_width = self.w_sections * section_dim
 
 		css_text = '''
 * {{box-sizing:border-box;}}
@@ -525,13 +563,13 @@ body {{background:black;
 	border:0;
 	margin:0;
 	padding:0;
-	z-index:10
+	z-index:10;
 	width:{image_container_width}px;}}
 .col img {{padding:0px;
 	margin:0px;
 	opacity:0.68;
-	height:40px;
-	width:40px;}}
+	height:{section_dim}px;
+	width:{section_dim}px;}}
 .row {{width:100%;
 	padding:0;
 	margin:0;}}
@@ -542,9 +580,9 @@ body {{background:black;
 .col {{float: left;
 	padding: 0px;
 	margin:0px;
-	height:40px;}}'''
+	height:{section_dim}px;}}'''
 
-		css_text = css_text.format(image_container_width = image_container_width)
+		css_text = css_text.format(image_container_width = image_container_width, section_dim = section_dim)
 
 		with open(css_output_filepath, 'w') as fh:
 			fh.write(css_text)
