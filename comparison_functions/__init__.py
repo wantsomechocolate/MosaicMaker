@@ -3,6 +3,9 @@
 import comparison_functions.error_functions
 import comparison_functions.reduce_functions
 
+## I think that comparison functions should be able to get a size to use for their analysis
+## maybe the user wants to analyze a smaller size for speed, but still use a larger thumbnail for the stuff
+
 ## COMPARISON FUNCTIONS
 ## All comparison functions should take two objects and an optional dictionary of options
 ## These two objects can be expected to have three attributes

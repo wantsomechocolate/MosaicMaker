@@ -30,3 +30,45 @@ ext - file extension, nfn - naked filename (no ext)'''
                     ext=ext,
                     nfn=nfn,  )
 
+
+#image = ImageOps.exif_transpose(im)
+def rotate_based_on_exif(pil_image_obj):
+
+    from PIL import Image, ExifTags
+
+    try:
+        #image=Image.open(filepath)
+
+        image = pil_image_obj
+
+        # for orientation in ExifTags.TAGS.keys():
+        #    if ExifTags.TAGS[orientation]=='Orientation':
+        #        break
+
+        orientation = 274
+
+        exif=dict(image._getexif().items())
+
+        if exif[orientation] == 3 or exif[orientation] == 4:
+            image=image.rotate(180, expand=True)
+        elif exif[orientation] == 6 or exif[orientation] == 5:
+            image=image.rotate(270, expand=True)
+        elif exif[orientation] == 8 or exif[orientation] == 7:
+            image=image.rotate(90, expand=True)
+
+        return image
+
+        #image.save(filepath)
+        #image.close()
+    except (AttributeError, KeyError, IndexError):
+        # cases: image don't have getexif
+        #print("WARNING: The image was not rotated, sorry")
+        return pil_image_obj
+
+
+
+
+
+
+
+

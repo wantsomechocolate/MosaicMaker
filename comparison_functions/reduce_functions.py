@@ -27,6 +27,8 @@ def average(
 		
 		#print("Calculating rgb_avg: ")
 		
+		## This for example is where the resizing would happen?
+
 		obj.rgb_avg = []
 		for i in range(f):
 			for j in range(f):
@@ -81,7 +83,9 @@ def __dominant_cluster(ar,opts=dict()):
 
 
 
-
+# There is definitely something wrong with this method, am I picking the least dominant color or something?
+# sometimes this function doesn't work because there is no 'most common' color, in which case, it picks the smaller
+# one regarding the rgb values. 
 def dominant_simple(
 
 	## https://stackoverflow.com/a/16331189/1937423
@@ -110,3 +114,7 @@ def dominant_simple(
 				obj.rgb_dom.append( np.unique(ar,axis=1)[0][0] )
 
 	return obj.rgb_dom
+
+
+
+
