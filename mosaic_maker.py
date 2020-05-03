@@ -26,7 +26,7 @@ import comparison_functions as cf
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
 ## Should come from a configuration at some point. 
-PIECE_DEFAULT_SAVE_SIZE = (512,512)
+PIECE_DEFAULT_SAVE_SIZE = (128,128)
 PIECE_ACCEPTED_FILETYPES = ['.png','.jpg']
 IMAGE_DEFAULT_COMPARISON_SIZE = (64,64)
 
@@ -332,14 +332,24 @@ class Mosaic:
 
 		## WHERE THE MAGIC HAPPENS
 		## Compare each section to each piece 
+		print('Starting to Create!')
+		#total_loops = self.h_sections * self.w_sections
+		#timer=[]
 		for h_section in range(self.h_sections):
+			
+			print('')
+			#print('starting row: '+str(h_section))
 			for w_section in range(self.w_sections):
-
+				print('x', end = '')
 				## The goal is to assign a single numerical value to each piece indicating it's similarity to the current section
 				for i in range(len(piece_list.pieces)):
 					#print("")
 					#print("w_section: {w_section} - h_section: {h_section}".format(w_section=w_section, h_section=h_section) , end="")
 					#print("   i = {i}".format(i=i))
+					## Should I check to see if a piece is over it's max here?
+					## If I do that it's kind of outside the comparison function and therefore outside of the choose function
+					## So I'd be making it like a permanant architechture that if you exceed max you're done,
+					## I don't think that's right........
 					self.comparison_function( 		self.grid[h_section][w_section]					,
 													piece_list.pieces[i] 							, 
 													
@@ -361,7 +371,7 @@ class Mosaic:
 				## coordinate given?
 				self.choose_match( (h_section,w_section), piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[], opts=opts )
 
-
+		print('')
 
 	## Someday I want to save the state of the pieces list for each section to have a quick ref of good alt matches
 	## I would use deep copy or something and depending on resources save the file path/id or the image data?  
@@ -879,7 +889,14 @@ class PieceList:
 
 	def __create_piece_list_from_directory(self, directory):
 
-		items = os.listdir(directory)
+		#items = os.listdir(directory)
+		items = []
+		for root, dirs, files in os.walk(directory):
+			for file in files:
+				#if os.path.splitext(file)[-1] in ['.png',',jpg']:
+					items.append(os.path.join(root,file))		
+
+
 		pieces = []
 
 		for item in items:	
@@ -896,7 +913,10 @@ class PieceList:
 					print('There was a problem thumbnailing '+piece_pillow_image.filename)
 		
 				piece_mosaic_image.max_instances = self._max_instances
-				piece_mosaic_image.appearances = dict(qty = 0, sections = [])
+				piece_mosaic_image.appearances = dict(	qty 					= 0 					, 
+														sections 				= [] 					, 
+														max_instances 			= self._max_instances 	, 
+														max_instance_multiplier = 1 					,	)
 
 				# I hard coded some stuff dealing with 3 layer images, sorry. 
 				if piece_mosaic_image.rgb_data_shape[2] == 3:

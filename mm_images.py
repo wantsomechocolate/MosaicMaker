@@ -15,8 +15,9 @@ from pathlib import Path
 MAX_ITEMS=100
 IMG_SAVE_SIZE = (128,128)
 IMG_DEFAULT_EXT = '.png'
-DEFAULT_SAVE_PATH = 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/'
-DB_LOCATION_GLOBAL = 'C:/Users/wants/Projects/Code/MosaicMakerImages/mosaicmaker_db.sqlite'
+#DEFAULT_SAVE_PATH = 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/'
+DEFAULT_SAVE_PATH = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/pieces - chongqing'
+DB_LOCATION_GLOBAL = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/mosaicmaker_db.sqlite'
 # DB_LOCATION = os.environ("MOSAIC_MAKER_DB_LOCATION")
 
 
@@ -127,7 +128,10 @@ def img_fh_from_url(url):
 	except requests.exceptions.ConnectionError as err:
 		print (err)
 		return None #, err
-
+	except requests.exceptions.ChunkedEncodingError as err:
+		print (err)
+		return None
+	
 	img_bytes = BytesIO(r.content)
 
 	try:
@@ -153,7 +157,13 @@ def img_crop_center(img):
 	right = floor( (ow/2) + (dw/2) )
 	lower = floor( (oh/2) + (dh/2) )
 
-	crop = img.crop((left,upper,right,lower))
+	try:
+		crop = img.crop((left,upper,right,lower))
+	except OSError as err:
+		print("There was a problem cropping the image")
+		print(err)
+		crop = img
+
 	
 	if hasattr(img,'filename'):
 		crop.filename = img.filename
@@ -171,13 +181,15 @@ def img_resize_to_def_save_size(img):
 
 
 
-def img_save(img):
+def img_save(img,path = DEFAULT_SAVE_PATH):
 
 	import base64
 
-	new_filename = base64.urlsafe_b64encode( Path(img.filename).stem.encode('utf-8') ).decode('utf-8') + IMG_DEFAULT_EXT
+	new_filename = base64.urlsafe_b64encode( Path(img.filename[:50]).stem.encode('utf-8') ).decode('utf-8') + IMG_DEFAULT_EXT
 	
-	fp = os.path.join(DEFAULT_SAVE_PATH,new_filename)
+	fp = os.path.join(path,new_filename)
+
+	os.mkdir(path) if not os.path.exists(path) else None
 
 	img.filename = new_filename
 
@@ -299,7 +311,7 @@ if False:
 	row_id_res = save_res_to_db(res)
 	res['query_row_id']=row_id_res	
 
-def save_item_to_db(res,item):
+def save_item_to_db(res,item, path = DEFAULT_SAVE_PATH):
 	url 				= item['link']
 	filepath 			= url_to_filepath(url)
 	groupDesignation 	= res['queries']['request'][0]['searchTerms']
@@ -320,7 +332,7 @@ def save_item_to_db(res,item):
 			
 			img_crop = img_crop_center(img_orig)
 			img_resized = img_resize_to_def_save_size(img_crop)
-			img_final = img_save(img_resized)
+			img_final = img_save(img_resized, path)
 
 			query_string = f''' INSERT INTO img_source 
 								(   filepath  ,  queryRef   ,  url   ,   groupDesignation  ,  relatedQuery   ,  imgMode    ) 
@@ -368,19 +380,23 @@ if __name__ == "__main__":
 		#res = str_to_dict(res)
 	#res_list=[res]
 
-	res_list = cse_iterator(	"the void" 					,
+	query_list = ["重庆夜色","重庆春节"]
+
+	for query in query_list:
+
+		res_list = cse_iterator(	query 					,
 								searchType 	= 'image'	,
-								#imgDominantColor = 'black',
+								#imgDominantColor = 'yellow',
 								#imgSize = 'large',
 								start 		= 1			,
 								num 		= 10		,	)
 
-	for res in res_list:
-		row_id_res 			= 	save_res_to_db(res)
-		res['query_row_id'] = 	row_id_res
-		items 				= 	res['items']
+		for res in res_list:
+			row_id_res 			= 	save_res_to_db(res)
+			res['query_row_id'] = 	row_id_res
+			items 				= 	res['items']
 
-		for item in items:
-			## This currently doesn't save the image as a blob, which I dont reaaaally want anyway at the moment
-			save_item_to_db(res,item)
+			for item in items:
+				## This currently doesn't save the image as a blob, which I dont reaaaally want anyway at the moment
+				save_item_to_db(res,item,os.path.join(DEFAULT_SAVE_PATH,query))
 	
