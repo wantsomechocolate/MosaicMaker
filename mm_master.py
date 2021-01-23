@@ -10,12 +10,14 @@ if True:
 
         ## PIECE LIST
         ## Create a piece_list - a list of MosaicImage objects that have been cropped as squares and resized to the default piece size.
-        # piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztemepdb/' )
-        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/pieces/',max_instances = 30 )
+        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztempdb100/',max_instances = 2 )
+        # piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/pieces/',max_instances = 30 )
         
         ## TARGET IMAGE
         ## can be a path, a PIL Image object, or a MosaicImage object
-        base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/Sun/Demi.jpg'
+        #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/Sun/Demi.jpg'
+        #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Anqi/Anqi-05/mud_mask.JPG'
+        base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Tests/MaxInstances/AllBlack.PNG'
         target_image = mm.MosaicImage( base_image_filepath )
         
         ## MOSAIC OBJECT
@@ -25,18 +27,18 @@ if True:
             ## The only positional argument for initializing the mosaic is the target image
             target_image,
             ## This determines how many sections to cut the target image up into. Its a percentage of the target image's smaller dimension. 
-            granularity=1/100,
+            granularity=1/16,
             
             ## The comparison Functions! You can supply a custom one to comparison_function, or you can override the reduce and error function individually
             comparison_function=None,
-            reduce_function=cf.reduce_functions.average,
-            error_function=cf.error_functions.luv_low_cost_approx,
+            #reduce_function=cf.reduce_functions.average,
+            #error_function=cf.error_functions.luv_low_cost_approx,
             
             ## These things govern how the comparison functions operate, look at the class for more information. 
-            f=5,
+            f=1,
             rgb_weighting = (1,1,1),
             random_max=0,
-            neighborhood_size = 5,
+            neighborhood_size = 1,
             
             opts=dict() )
 
@@ -63,6 +65,11 @@ if True:
         ## And you, uhhhh, actually can't change that behavior at the moment, lol. 
         master.output_html()
         #master.output_to_image()
+        updated_instances = master.update_all_instances_of((1,9),piece_list)
+        master.output_html()
+
+        updated_instances_2 = master.update_all_instances_of_except_self((1,9),piece_list)
+        master.output_html()
 
 
 ## SOME MORE EXAMPLES!

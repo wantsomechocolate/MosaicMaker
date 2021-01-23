@@ -327,6 +327,8 @@ class Mosaic:
 
 		''' Create a mosaic - you can use custom comparison functions! '''
 
+		## I may not want to do this anymore if I plan to store all the error data for each piece section combination
+		## starting to think that maybe like 200 would be sufficient?
 		piece_list.flush_instance_counts()
 
 		## WHERE THE MAGIC HAPPENS
@@ -418,11 +420,22 @@ class Mosaic:
 
 		## If a piece has been used it's max times, remove it from the list
 		## This is very inefficient because I'll be removing the same item multiple times, just want to see if it works, though. 
-		## I have no idea what this is using to determing sameness. 
+		## I have no idea what this is using to determing sameness.
+		## HELP 
+		## So this is working, but I'd like to add something like a max_instances adder or something,
+		## I can do that wherever max instances is set if it's not specified. basically if it's 2, I want it to go up by 2
+		## every time, not 1, and not x2. fix later. Good to see that it's working as expected though. 
+		counter=0
 		for piece in pieces:
 			if piece.appearances['qty']>=piece.max_instances:
+				#perhaps here I can check to see how far above max instances the piece is?
+				#this is already going through every single piece when all items are above max_instance!
 				#print("this piece's appearances were higher than it's max_instances")
 				piece.error = None
+				counter+=1
+			if counter == len(pieces):
+				for piece in pieces:
+					piece.max_instances += piece.max_instances0
 
 
 		## Sort the list again, this time there will (probably) be some None - https://stackoverflow.com/a/18411610/1937423
@@ -533,12 +546,18 @@ class Mosaic:
 	## TOUCH UP FUNCTIONS
 	## #########################################################################################
 
-	## Should this be able to take a section, check to see if it has a piece attribute, then use that?
-	## if you pass this a section, it will, in most cases, do nothing. 
-	## This should probably be able to take a blocklist as well?
-	## Still need to test this function, seemed, like some funky stuff going on. 
-	def update_all_instances_of(self,piece,piece_list,opts = dict()):
+	## This function is currently working - still listens to max_instances and neighborhood constraints. All around good time. 
+	## But it needs to take a section or coordinates and then get the piece from there because 
+	## when there is a front end that's the most important info,
+	## this would also allow me to have update_all_instances_except_this_one be the same function with a different argument.
+	## If this section doesn't have a piece, then just return None?
+	def update_all_instances_of(self,coordinates,piece_list,replace_self = True ,opts = dict()):
+
+		#master.update_all_instances_of(master.grid[1][9].piece,piece_list)
 		
+		## get the piece that the section at these coordinates has?
+		piece = self.grid[coordinates[0]][coordinates[1]].piece
+
 		## get all the sections that have this piece - this uses filename - do something better
 		sections=[]
 		piece_file_name = piece.original_image.filename.split('/')[-1]
@@ -549,15 +568,24 @@ class Mosaic:
 					sections.append(self.grid[i][j])
 
 		## the items are pieces
-		for section in sections:
-			for i in range(len(piece_list.pieces)):
-				self.comparison_function(section,piece_list.pieces[i],f=self.f)
 
-			self.choose_match(section.coordinates, piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[section.piece], opts=opts )
+		### Remove the clicked instance if specified. 
+		if replace_self == False:
+			sections = [section for section in sections if section.coordinates != coordinates]
+
+		for section in sections:
+
+				for i in range(len(piece_list.pieces)):
+					self.comparison_function(section,piece_list.pieces[i],f=self.f)
+
+				self.choose_match(section.coordinates, piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[section.piece], opts=opts )
 
 
 		return sections
 	
+
+	def update_all_instances_of_except_self(self, coordinates, piece_list, replace_self = False, opts = dict()):
+		return self.update_all_instances_of(coordinates,piece_list,replace_self, opts)
 
 
 	## #########################################################################################
@@ -868,6 +896,7 @@ class PieceList:
 		self._accepted_filetypes = PIECE_ACCEPTED_FILETYPES
 
 		self._max_instances = max_instances
+		self._max_instances0 = max_instances
 
 		self._pieces = self.__process_pieces_arg(arg)
 
@@ -912,9 +941,11 @@ class PieceList:
 					print('There was a problem thumbnailing '+piece_pillow_image.filename)
 		
 				piece_mosaic_image.max_instances = self._max_instances
+				piece_mosaic_image.max_instances0 = self._max_instances0
 				piece_mosaic_image.appearances = dict(	qty 					= 0 					, 
 														sections 				= [] 					, 
 														max_instances 			= self._max_instances 	, 
+														max_instances0 			= self._max_instances0 	,
 														max_instance_multiplier = 1 					,	)
 
 				# I hard coded some stuff dealing with 3 layer images, sorry. 
