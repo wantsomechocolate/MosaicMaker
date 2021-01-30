@@ -12,23 +12,12 @@ def average(
 	opts 	= dict() 	,	):
 
 	## If the greater being is telling you to reset, reset.
-	if reset:
-		
-		#print("Reset was true: ", end="")
-		
+	if reset:		
 		if hasattr(obj,'rgb_avg'):
-		
-			#print("Removed rgb_avg: ", end="")
-		
 			delattr(obj, 'rgb_avg')
 	
 	## Check to see if you've already calculated whatever it is you're trying to calculate for obj. 
 	if not hasattr(obj,"rgb_avg"):
-		
-		#print("Calculating rgb_avg: ")
-		
-		## This for example is where the resizing would happen?
-
 		obj.rgb_avg = []
 		for i in range(f):
 			for j in range(f):
@@ -95,7 +84,6 @@ def dominant_simple(
 	reset 	= True 		,
 	opts 	= dict() 	,	):
 	
-
 	if reset:
 		if hasattr(obj,'rgb_dom'):
 			delattr(obj,'rgb_dom')
@@ -105,12 +93,9 @@ def dominant_simple(
 		for i in range(f):
 			for j in range(f):
 
-				ar = obj.rgb_data[ int(obj.height/f)*i : int(obj.height/f)*(i+1) , int(obj.width/f)*j  : int(obj.width/f)*(j+1) , : ]
-				
+				ar = obj.rgb_data[ int(obj.height/f)*i : int(obj.height/f)*(i+1) , int(obj.width/f)*j  : int(obj.width/f)*(j+1) , : ]				
 				shape = ar.shape
-
 				ar = ar.reshape((1,shape[0]*shape[1],shape[2]))
-
 				obj.rgb_dom.append( np.unique(ar,axis=1)[0][0] )
 
 	return obj.rgb_dom

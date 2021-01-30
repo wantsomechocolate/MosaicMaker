@@ -24,7 +24,7 @@ import comparison_functions as cf
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
-## Should come from a configuration at some point. 
+## Should come from a configuration file at some point. 
 PIECE_DEFAULT_SAVE_SIZE = (128,128)
 PIECE_ACCEPTED_FILETYPES = ['.png','.jpg']
 IMAGE_DEFAULT_COMPARISON_SIZE = (64,64)
@@ -34,25 +34,10 @@ IMAGE_DEFAULT_COMPARISON_SIZE = (64,64)
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
 ## This file defines the following classes all related to creating photo mosaics. 
-## Mosaic Image
-## Mosaic
-## CompareImages
-## PieceList
-
-## MosaicImage
-## A wrapper for a pillow image object
-
-## Mosaic
-## Holds information about the sections
-
-## CompareImages
-## Just a holder for the comparison functions used to compare sections and pieces
-
-## PieceList
-## Holds the pieces, has some basic functionality for getting a piece list from a directory
-
-
-
+## Mosaic Image 	- A wrapper for a pillow image object
+## Mosaic 			- Holds information about the sections
+## CompareImages	- Just a holder for the comparison functions used to compare sections and pieces
+## PieceList 		- Holds the pieces, has some basic functionality for getting a piece list from a directory
 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
@@ -74,6 +59,9 @@ class MosaicImage:
 		self.original_image = self._img
 		if 'exif' in self.original_image.info:
 			self.exif 		= self.original_image.info['exif']
+		## Partial opacity is not supported
+		## If people wanted to write custom comparison functions that allowed for this I guess I could make 
+		## this a optional thing?
 		if self.original_image.mode == 'RGBA':
 			self.__rgba_to_rgb()
 		self.__update()
@@ -88,12 +76,12 @@ class MosaicImage:
 
 	## In case any image manipulation operations, use this function to reset exposed img data. 
 	def __update(self):		
-		self.rgb_data 		=	np.asarray(self._img)
-		self.rgb_data_shape = 	self.rgb_data.shape
-		self.mode			=	self._img.mode
-		self.error 			=	None	
-		self.width, self.height = self._img.size
-		self.size 			= 	self._img.size		
+		self.rgb_data 			=	np.asarray(self._img)
+		self.rgb_data_shape 	= 	self.rgb_data.shape
+		self.mode				=	self._img.mode
+		self.error 				=	None	
+		self.width, self.height = 	self._img.size
+		self.size 				= 	self._img.size		
 
 
 	## for dealing with rgba
@@ -128,9 +116,8 @@ class MosaicImage:
 			self._img = self._img.resize(size)
 			self.__update()
 
-
+	## I put this orientation stuff in a function kind of outside of the project, but maybe I'll roll it back in. 
 	def correct_orientation(self):
-		#self._img = ImageOps.exif_transpose(self._img)
 		self._img = wsc.rotate_based_on_exif(self._img)
 		self.__update()
 
@@ -141,17 +128,13 @@ class MosaicImage:
 		self.correct_orientation()
 
 
-
-
-
-
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
 @wsc.timer
 class Mosaic:
-	'''Size is a tuple of width X height. Individual sections are accessed with [row][col]. 
+	'''Size is a tuple of the form (width, height). Individual sections are accessed with [row][col]. 
 	First argument can be a string, PIL Image object, or MosacImage obect.'''
 	def __init__( 	self 							, 
 					image 							, 
@@ -172,7 +155,6 @@ class Mosaic:
 		self._granularity	 	= granularity
 		self.target 			= image
 
-
 		self.default_comparison_function = None #rgb_avg_comparison
 		self.default_reduce_function = cf.reduce_functions.average
 		self.default_error_function = cf.error_functions.sum_abs_error
@@ -187,6 +169,7 @@ class Mosaic:
 		## Other variables defined here
 		self.f 					= f 				
 		self.rgb_weighting		= rgb_weighting		 
+		## Maybe random should be allowed to be a tuple of (min,max)? or min,offset?
 		self.random_max			= random_max		 
 		self.neighborhood_size	= neighborhood_size	 
 
@@ -214,9 +197,9 @@ class Mosaic:
 		self._target = self.__process_target_argument(value)
 		self.__update()
 
-
+	## Any time the target image is specified, or the number of sections is affected, this method should be called. 
+	## Right now the number of sections is only affected by granularity. 
 	def __update(self):
-		## These things need to update - these should probably be single underscore things?
 		self._target.min_dim = min(self._target.width, self._target.height)
 		self.section_width 	= self.section_height = int(self._granularity * self._target.min_dim)
 		self.w_sections 	= int( self._target.width  / self.section_width  )
@@ -224,8 +207,9 @@ class Mosaic:
 
 		## Set up an empty grid of the size you'll need based on the inputs. 
 		self.grid = [ [None for i in range(self.w_sections)] for j in range(self.h_sections) ]
-		## Loop through all the sections and create MosaicImage objects out of them all and put them in the appropriate
-		## place in the grid - these are referred to as sections
+		
+		## Loop through all the sections and create MosaicImage objects out of them all
+		## I also add the coordinates to each section for easier reference when doing post edits. 
 		for h_section in range(self.h_sections):
 			for w_section in range(self.w_sections):
 				section = self._target.img.crop((	self.section_width	*	 w_section 		, 		## left
@@ -236,7 +220,7 @@ class Mosaic:
 				## the grid is indexed using row,col
 				self.grid[h_section][w_section] = MosaicImage(section)
 				self.grid[h_section][w_section].coordinates = (h_section,w_section)	
-
+				self.grid[h_section][w_section].pinned = False
 
 
 	## For treating the target image argument. 
@@ -252,39 +236,26 @@ class Mosaic:
 
 
 	## #########################################################################################
-	## COMPARISON RELATED FUNCTIONS
+	## COMPARISON FUNCTIONS
 	## #########################################################################################
 
-
 	def __process_comparison_function(self):
-		## If there is a comparison function passed it, do it up!
+		## If there is a comparison function passed directly, do it up!
 		if self._comparison_function != None:
-			
-			#print("A comparison function was passed directly")
-
 			pass
 			
-		## if either of reduce or error is specified build the comparison function using the given info and defaults if necessary	
+		## if either of reduce or error is specified, build the cf using the given info and defaults if necessary	
 		elif (self._reduce_function != None) or (self._error_function != None):
-			
-			#print("either a reduce or an error function (or both) were passed directly")
-			
 			self._reduce_function = self.default_reduce_function if self._reduce_function == None else self._reduce_function
 			self._error_function = self.default_error_function if self._error_function == None else self._error_function				
 			self._comparison_function = cf.build_comparison_function(self._reduce_function, self._error_function)
 
-		## if given nothing, use the default comparison function if the object has one I don't give it one
+		## if given nothing, and the object has a default cf defined, use that. 
 		elif self.default_comparison_function != None:
-			
-			#print("No comparison functions were passed directly, using the class default for comparison function")
-			
 			self._comparison_function = self.default_comparison_function
 
-		## after all that, use the default reduce and error functions to build the comparison function. 
-		else:
-			
-			#print("No comparison functions were passed directly, using the class default for reduce and error functions")
-			
+		## If given nothing, and hte object does not have a default df defined, use the default rf and ef.  
+		else:		
 			self._comparison_function = cf.build_comparison_function(self.default_reduce_function, self.default_error_function)
 
 
@@ -319,7 +290,8 @@ class Mosaic:
 	## THE MAIN METHODS OF THIS CLASS
 	## #########################################################################################
 
-	## Debating on whether or not to let this function override settings in self
+	## Should allow the user to specify arguments here that set parameters at the mosaic level. 
+	## e.g. if I say create with granularity = 1/16, but master has g=1/32, set master g = 1/16.
 	@wsc.timer
 	def create( 	self 			, 
 					piece_list		, 					
@@ -327,30 +299,34 @@ class Mosaic:
 
 		''' Create a mosaic - you can use custom comparison functions! '''
 
-		## I may not want to do this anymore if I plan to store all the error data for each piece section combination
-		## starting to think that maybe like 200 would be sufficient?
+		print('Starting to Create!')
+
+		## When creating a new mosaic from an existing master, you need to flush the instance counts from the 
+		## piece list, otherwise the piece list will think it already has a bunch of stuff
+		## in the mosaic. 
 		piece_list.flush_instance_counts()
 
+
 		## WHERE THE MAGIC HAPPENS
+
 		## Compare each section to each piece 
-		print('Starting to Create!')
-		#total_loops = self.h_sections * self.w_sections
-		#timer=[]
-		for h_section in range(self.h_sections):
-			
+		## I want to implement the ability to keep track of the progress here
+		## Currently I do it by printing x in the shape of the mosaic, but that won't work on the front end. 
+		## total_sections = self.h_sections * self.w_sections (this might be useful later)
+		## Right now, comparison function puts the error on object 2 (the 2nd argument)
+		for h_section in range(self.h_sections):			
 			print('')
-			#print('starting row: '+str(h_section))
+
 			for w_section in range(self.w_sections):
 				print('x', end = '')
-				## The goal is to assign a single numerical value to each piece indicating it's similarity to the current section
+
+				## The goal is to assign a single numerical value to each piece 
+				##   indicating it's similarity to the current section
 				for i in range(len(piece_list.pieces)):
-					#print("")
-					#print("w_section: {w_section} - h_section: {h_section}".format(w_section=w_section, h_section=h_section) , end="")
-					#print("   i = {i}".format(i=i))
-					## Should I check to see if a piece is over it's max here?
-					## If I do that it's kind of outside the comparison function and therefore outside of the choose function
-					## So I'd be making it like a permanant architechture that if you exceed max you're done,
-					## I don't think that's right........
+
+					## Reset obj1 and obj2 are useful when you want to save calculations 
+					## through iterations of the comparison function. 
+					## For example, pieces only need to be reduced once, that result can then be used with every section. 
 					self.comparison_function( 		self.grid[h_section][w_section]					,
 													piece_list.pieces[i] 							, 
 													
@@ -363,59 +339,58 @@ class Mosaic:
 													opts 				= opts 						,	)
 					
 
-				## Right now piece_list is the same between iterations of this loop and the error is getting
-				## reset each time. I feel like trying to save all the error results would be too much information?
-				## I'm thinking of allowing users to override the choose match function, because then they wouldn't be 
-				## limited to using a single numerical value as the selection criteria. 
-
-				## Hmmm, I think I might want to have choose match return the match instead of assigning directly to the 
-				## coordinate given?
+				## Should I have choose match return the match instead of assigning directly to the coordinate given?
+				## Should I allow users to override cm so they are not limited to a single numerical value as selection criteria?
+				## I might want to save error results for all or many pieces at the section level. 
 				self.choose_match( (h_section,w_section), piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[], opts=opts )
+
+				## At this point, a given section has just finished being compared to all pieces. 
+				## More efficient might be to have comparison function save error results on obj1 for all obj2
+				## A workaround for now might be to just do something here (would require looping through all piece again)
+				## What's one more time though when you're already doing it hundreds of time lmao. 
 
 		print('')
 
-	## Someday I want to save the state of the pieces list for each section to have a quick ref of good alt matches
-	## I would use deep copy or something and depending on resources save the file path/id or the image data?  
-
-	## Maybe random should be allowed to be a tuple of (min,max)? or min,offset?
 
 
-	## This function must now check to see if the number of times a piece has been chosen is 
-	## above the max number of times a piece CAN be chosen
-	## But I need to think for a bit about how I want to do this. 
+	## Choose match has a big job right now. It takes a section, piece list, and some other stuff
+	## and tries to choose a match while satisfying all the criteria.
+	## 		Can't be in the same neighborhood
+	## 		Can't be in the blocklist
+	## 		Can't exceed max_instances (currently set on the pieces object)
 	def choose_match(self, coordinates, pieces, random_max, neighborhood_size, blocklist=[], opts = dict() ):
 		'''Choose the closest match that doesn't violate the neighbor constraint'''
 
-
 		## Sort in the beginning because I think it makes later things faster. 
+		## https://stackoverflow.com/a/18411610/1937423
 		pieces.sort(key=lambda x: (x.error is None, x.error))
-
-		## Create a temp copy of pieces - use copy because you want a new list, but the same objects in the list
-		#temp_pieces = copy.copy(pieces)
 
 		## Collect all the neighbors to merge with the blocklist
 		neighbors = self.get_neighbors(coordinates, neighborhood_size) if neighborhood_size != 0 else []
 
-		## get_neighbors returns a list of mosaicmaker image objects so blocklist must also contain those, foo.
-		## there isn't a special object for the section of a mosaic grid. 
-		for item in blocklist:
-			neighbors.append(item)
 
-		## Change variable name? - also this is using the filename as the unique identifier for pieces at the moment
-		## not the worst, but definitely not the best
-		for neighbor in neighbors:
-					
-			## does neighbor have a mosaic object chosen for itself yet? This also currently sets the error in all 
-			## items in blocklist to None
-			if hasattr(neighbor,'piece'):
-				neighbor_mosaic_image = neighbor.piece
+		## get_neighbors returns a list of grid sections, but I'm interested in the unique pieces contained within 
+		## all the neighbors because I'm not allowed to use those, I'm also interested in the pieces in blocklist
+		## So blocklist should be piece objects - not grid sections, because I should be able to theoretically
+		## block a piece that's not in any section yet. 
+		## I need a new function callled get_neighbor_pieces or somthing that does something like this. 
+		neighbor_pieces = [neighbor.piece for neighbor in neighbors if hasattr(neighbor,'piece')]
 
+		## now that neighbors is a list of pieces, and blocklist is a list of pieces, you can just add them together. 
+		master_blacklist = neighbors+blocklist
+
+
+
+		## This is using the filename as the unique identifier for pieces at the moment
+		## Will hopefully change in the future when starting to use a database. 
+		for piece in master_blacklist:				
+			#if hasattr(item,'piece'):
 				## Find where the neighbor's piece is in the pieces list. Straight from SO baby. 
-				piece = next((x for x in pieces if x.original_image.filename == neighbor_mosaic_image.original_image.filename), None)
+				#piece = next((x for x in pieces if x.original_image.filename == item.piece.original_image.filename), None)
 
 				## Update it's error to be nothing (and properly handle None on sort)
 				## I'm not particularly happy about how I'm handling this atm. 
-				piece.error = None
+			piece.error = None
 
 
 		## If a piece has been used it's max times, remove it from the list
@@ -428,9 +403,6 @@ class Mosaic:
 		counter=0
 		for piece in pieces:
 			if piece.appearances['qty']>=piece.max_instances:
-				#perhaps here I can check to see how far above max instances the piece is?
-				#this is already going through every single piece when all items are above max_instance!
-				#print("this piece's appearances were higher than it's max_instances")
 				piece.error = None
 				counter+=1
 			if counter == len(pieces):
@@ -438,10 +410,8 @@ class Mosaic:
 					piece.max_instances += piece.max_instances0
 
 
-		## Sort the list again, this time there will (probably) be some None - https://stackoverflow.com/a/18411610/1937423
-		## Actually probably not anymore, because you're removing instead of changing error to None.
-		## if everything is none this will start kind of just selecting a random one. 
-
+		## Sort the list again, this time there will probably be some None now
+		## What happens when all are None?
 		pieces.sort(key=lambda x: (x.error is None, x.error))		
 
 
@@ -551,11 +521,18 @@ class Mosaic:
 	## when there is a front end that's the most important info,
 	## this would also allow me to have update_all_instances_except_this_one be the same function with a different argument.
 	## If this section doesn't have a piece, then just return None?
+
+
+	## I was testing this function on a image of just black, like an idiot
+	## this function needs to reset obj1 and obj2 intelligently, like when creating a mosaic the first time. 
+	## I want to be able to override the settings used to find matches. Not implemented yet
+
+	## This function needs to update the appearances info for all affected pieces! It's not doing that right now
 	def update_all_instances_of(self,coordinates,piece_list,replace_self = True ,opts = dict()):
 
 		#master.update_all_instances_of(master.grid[1][9].piece,piece_list)
 		
-		## get the piece that the section at these coordinates has?
+		## get the piece that the section at these coordinates has
 		piece = self.grid[coordinates[0]][coordinates[1]].piece
 
 		## get all the sections that have this piece - this uses filename - do something better
@@ -564,21 +541,42 @@ class Mosaic:
 		for i in range(self.h_sections):
 			for j in range(self.w_sections):
 				if self.grid[i][j].piece.original_image.filename.split('/')[-1] == piece_file_name:
-					#self.grid[i][j].coordinates = (i,j)
 					sections.append(self.grid[i][j])
 
-		## the items are pieces
 
-		### Remove the clicked instance if specified. 
+
+
+		## Remove the clicked instance if specified. 
 		if replace_self == False:
-			sections = [section for section in sections if section.coordinates != coordinates]
+			sections = [section for section in sections if section.coordinates != coordinates]	
 
-		for section in sections:
 
-				for i in range(len(piece_list.pieces)):
-					self.comparison_function(section,piece_list.pieces[i],f=self.f)
+		## This is like creating the mosaic the first time except you are looping through specific sections
+		## instead of all sections. 
+		for section_index in range(len(sections)):
+			section = sections[section_index]
 
-				self.choose_match(section.coordinates, piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[section.piece], opts=opts )
+			for i in range(len(piece_list.pieces)):
+				self.comparison_function( 	section									,
+											piece_list.pieces[i] 					, 
+											f 				= self.f 				, 
+											rgb_weighting 	= self.rgb_weighting	,
+											reset_obj1		= i==0 					, #first iteration of a new section
+											reset_obj2 		= section_index==0		, #all iterations of the first section
+											opts 			= opts 					,	)
+
+			self.choose_match(section.coordinates, piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[section.piece], opts=opts )
+
+		## Update the appearances. If replacing clicked instance and all others it will be 0
+		## If not replacing the clicked instance, it will be 1 and the section will be the one clicked. 
+		## I could do something like remove the specific section as you go through each section, but this is faster
+		## I don't see anything wrong with it yet unless this function fails in the middle
+		## But I think I'll need a way to clean up the appearances functionality later anyway, bottom line, don't
+		## trust the appearances thing to always be correct, it's good reference, but don't rely on it yet. 
+		if replace_self:
+			piece.appearances = dict(qty=0,sections=[])
+		else:
+			piece.appearances = dict(qty=1,sections=[self.grid[coordinates[0]][coordinates[1]]])
 
 
 		return sections
@@ -586,6 +584,12 @@ class Mosaic:
 
 	def update_all_instances_of_except_self(self, coordinates, piece_list, replace_self = False, opts = dict()):
 		return self.update_all_instances_of(coordinates,piece_list,replace_self, opts)
+
+
+	def pin(self,coordinates):
+		if hasattr(self.grid[coordinates[0]][coordinates[1]],"piece"):
+			self.grid[coordinates[0]][coordinates[1]].pinned = True
+
 
 
 	## #########################################################################################
@@ -910,6 +914,7 @@ class PieceList:
 			self.directory = arg
 			pieces = self.__create_piece_list_from_directory(arg)
 		else:
+			print ("WARNING: The argument supplied to PieceList was not an existing directory, assuming a piece_list was given.")
 			pieces = arg
 
 		return pieces

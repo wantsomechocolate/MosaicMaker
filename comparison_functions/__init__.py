@@ -43,22 +43,17 @@ def build_comparison_function(reduce_function, error_function, opts=dict() ):
 		reset_obj2 		= True 		,
 		opts 			= dict() 	,	):
 
-		#print("Entering obj1 reduce function: ", end="")
-
 		obj1_data = reduce_function( 
 			obj1 					, 
 			f 		= f 			,  
 			reset 	= reset_obj1	,
 			opts 	= opts 			,	)
 
-		#print("Entering obj2 reduce function: ", end="")
-
 		obj2_data = reduce_function( 
 			obj2 					, 
 			f 		= f 			,  
 			reset 	= reset_obj2	,
 			opts 	= opts 			,	)
-
 
 		obj2.error = error_function(
 			obj1_data 				, 
