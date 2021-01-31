@@ -176,6 +176,8 @@ class Mosaic:
 		## See the update function for other things that get defined on initialization
 
 
+
+
 	## #########################################################################################
 	## Granularity and target need getters and setters so that other attributes update when they change
 	## #########################################################################################
@@ -220,7 +222,12 @@ class Mosaic:
 				## the grid is indexed using row,col
 				self.grid[h_section][w_section] = MosaicImage(section)
 				self.grid[h_section][w_section].coordinates = (h_section,w_section)	
+				
+				## Still fooling around with this at the moment. Should I be able to give the mosaic object
+				## a map on init to automatically set these values for each section?
+				## or maybe a defult type like center-out for the priority?
 				self.grid[h_section][w_section].pinned = False
+				self.grid[h_section][w_section].priority = 0
 
 
 	## For treating the target image argument. 
@@ -309,45 +316,64 @@ class Mosaic:
 
 		## WHERE THE MAGIC HAPPENS
 
+		## 1/30/21
+		## Ok so here I used to go through each section in order, but now I want to be able to 
+		## adjust the section priority, so instead of going in order, I just need to put all the sections in a list
+		## and sort the list based on priority, then go through that list in order.
+		sections_list = [self.grid[h_section][w_section] for h_section in range(self.h_sections) for w_section in range(self.w_sections)]
+		sections_list.sort(key=lambda x: (x.priority is None, x.priority), reverse = True)
+
 		## Compare each section to each piece 
 		## I want to implement the ability to keep track of the progress here
 		## Currently I do it by printing x in the shape of the mosaic, but that won't work on the front end. 
 		## total_sections = self.h_sections * self.w_sections (this might be useful later)
 		## Right now, comparison function puts the error on object 2 (the 2nd argument)
-		for h_section in range(self.h_sections):			
-			print('')
 
-			for w_section in range(self.w_sections):
-				print('x', end = '')
+		#for h_section in range(self.h_sections):			
+		#	print('')
+		#	for w_section in range(self.w_sections):
+		#		print('x', end = '')
+		
+		#total_sections = self.h_sections * self.w_sections
 
-				## The goal is to assign a single numerical value to each piece 
-				##   indicating it's similarity to the current section
-				for i in range(len(piece_list.pieces)):
+		progress1 = progress2 = 0
+		for i in range(len(sections_list)):
 
-					## Reset obj1 and obj2 are useful when you want to save calculations 
-					## through iterations of the comparison function. 
-					## For example, pieces only need to be reduced once, that result can then be used with every section. 
-					self.comparison_function( 		self.grid[h_section][w_section]					,
-													piece_list.pieces[i] 							, 
-													
-													f 					= self.f 					, 
-													rgb_weighting 		= self.rgb_weighting		,
+			## The goal is to assign a single numerical value to each piece 
+			##   indicating it's similarity to the current section
+			for j in range(len(piece_list.pieces)):
 
-													reset_obj1			= i==0 						, #first iteration of a new section
-													reset_obj2 			= h_section+w_section==0	, #all iterations of the first section
-													
-													opts 				= opts 						,	)
-					
+				## Reset obj1 and obj2 are useful when you want to save calculations 
+				## through iterations of the comparison function. 
+				## For example, pieces only need to be reduced once, that result can then be used with every section. 
+				self.comparison_function( 		sections_list[i]								,	#self.grid[h_section][w_section]					,
+												piece_list.pieces[j] 							, 
+												
+												f 					= self.f 					, 
+												rgb_weighting 		= self.rgb_weighting		,
 
-				## Should I have choose match return the match instead of assigning directly to the coordinate given?
-				## Should I allow users to override cm so they are not limited to a single numerical value as selection criteria?
-				## I might want to save error results for all or many pieces at the section level. 
-				self.choose_match( (h_section,w_section), piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[], opts=opts )
+												reset_obj1			= j==0 						, ## first iteration of a new section
+												reset_obj2 			= i==0 						, ## all iterations of the first section #h_section+w_section==0,
+												
+												opts 				= opts 						,	)
+				
 
-				## At this point, a given section has just finished being compared to all pieces. 
-				## More efficient might be to have comparison function save error results on obj1 for all obj2
-				## A workaround for now might be to just do something here (would require looping through all piece again)
-				## What's one more time though when you're already doing it hundreds of time lmao. 
+			## Should I have choose match return the match instead of assigning directly to the coordinate given?
+			## Should I allow users to override cm so they are not limited to a single numerical value as selection criteria?
+			## I might want to save error results for all or many pieces at the section level. 
+			#self.choose_match( (h_section,w_section), piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[], opts=opts )
+			self.choose_match( sections_list[i].coordinates, piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[], opts=opts )
+			
+			## At this point, a given section has just finished being compared to all pieces. 
+			## More efficient might be to have comparison function save error results on obj1 for all obj2
+			## A workaround for now might be to just do something here (would require looping through all piece again)
+			## What's one more time though when you're already doing it hundreds of time lmao. 
+
+			progress2 = round(i*10/len(sections_list),0)
+			if progress1!=progress2:
+				print('#',end='')
+				progress1=progress2
+
 
 		print('')
 
@@ -377,7 +403,7 @@ class Mosaic:
 		neighbor_pieces = [neighbor.piece for neighbor in neighbors if hasattr(neighbor,'piece')]
 
 		## now that neighbors is a list of pieces, and blocklist is a list of pieces, you can just add them together. 
-		master_blacklist = neighbors+blocklist
+		master_blacklist = neighbor_pieces+blocklist
 
 
 
@@ -484,7 +510,11 @@ class Mosaic:
 		return self._unique_pieces
 
 		
-	## This aren't used for anything .... YET!	
+	## I want to have three ways to set section prio
+	## one is the simple inside out
+	## one is based on edge detection
+	## and one is just custom highlighting (I think this is the best)
+	## Or maybe a combination of 2 or 3 and inside out. 
 	def set_section_priority(self,bwp=0.1):
 		w_sections_0 = self.w_sections - 1
 		h_sections_0 = self.h_sections - 1
@@ -495,22 +525,34 @@ class Mosaic:
 		for h_asc in range(self.h_sections):
 			h_des = h_sections_0 - h_asc
 			#print('')
-			for w_asc in range(self.h_sections):
+			for w_asc in range(self.w_sections):
 				w_des = w_sections_0 - w_asc
 
 				loop_num = min( min( min( nl, int(h_asc/bw) ), min( nl, int(h_des/bw) ) ), min( min( nl, int(w_asc/bw) ), min( nl, int(w_des/bw) ) ) )
 				#print(loop_num,end='')
-				self.grid[h_asc][w_asc].loop_priority = loop_num
+				self.grid[h_asc][w_asc].priority = loop_num
 
 	def show_section_priority(self):
 		for i in range(self.h_sections):
 			print('')
 			for j in range(self.w_sections):
-				try:
-					print(str(self.grid[i][j].loop_priority).zfill(2),end=' ')
-				except:
-					print('-1',end='')
+				print(str(self.grid[i][j].priority).zfill(2),end=' ')
 
+
+	def set_section_priority_edges():
+		
+		img_orig = Image.open(self.target.img)
+		img_bnw = img_orig.convert('L')
+		img_blur = img_bnw.filter(ImageFilter.GaussianBlur(radius=2))
+		img_edges = img_blur.filter(ImageFilter.FIND_EDGES)
+
+		##img_laplace = img_blur.filter(ImageFilter.Kernel((3, 3), (-1, -1, -1,
+		##					      -1,  8, -1,
+		##					      -1, -1, -1), 1, 0))
+
+		## This creates an images that has only edges in it
+		## now I have to go through and see which sections have the most edges and
+		## give them the highest priority! but next time I'm super sleepy. 
 
 	## #########################################################################################
 	## TOUCH UP FUNCTIONS

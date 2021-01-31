@@ -10,17 +10,17 @@ import comparison_functions as cf
 ## BASIC USAGE
 ## ##############################################################################################################################################
 
-if False:
+if True:
 
         ## PIECE LIST - Create a piece_list - a list of MosaicImage objects that have been cropped as squares and resized to the default piece size.
-        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztempdb100/',max_instances = 2 )
-        # piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/pieces/',max_instances = 30 )
-
+        #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztempdb100/',max_instances = 2 )
+        #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/pieces/',max_instances = 30 )
+        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztemepdb/',max_instances = 2 )
 
         ## TARGET IMAGE - can be a path, a PIL Image object, or a MosaicImage object
         #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/Sun/Demi.jpg'
-        #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Anqi/Anqi-05/mud_mask.JPG'
-        base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Tests/MaxInstances/AllBlack.PNG'
+        base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Anqi/Anqi-05/mud_mask.JPG'
+        #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Tests/MaxInstances/AllBlack.PNG'
         target_image = mm.MosaicImage( base_image_filepath )
         
 
@@ -42,17 +42,17 @@ if False:
             ## The only positional argument for initializing the mosaic is the target image
             target_image,
             ## This determines how many sections to cut the target image up into. Its a percentage of the target image's smaller dimension. 
-            granularity=1/16,
+            granularity=1/32,
             ## The comparison Functions! You can supply a custom one to comparison_function, or you can override the reduce and error function individually
             comparison_function=comparison_function,
             #reduce_function=cf.reduce_functions.average,
             #error_function=cf.error_functions.luv_low_cost_approx,
             
             ## These things govern how the comparison functions operate, look at the class for more information. I'm considering putting all of these things into opts. 
-            f=1,
+            f=3,
             rgb_weighting = (1,1,1),
             random_max=0,
-            neighborhood_size = 1,
+            neighborhood_size = 3,
 
             ## Additional parameters. I think this can be used for info needed for custom comparison functions. 
             opts=dict() )
@@ -78,6 +78,10 @@ if False:
         ## And you, uhhhh, actually can't change that behavior at the moment, lol. 
         master.output_html()
         #master.output_to_image()
+
+        master.set_section_priority()
+        master.create(piece_list)
+        master.output_html()
 
 
 ## ##############################################################################################################################################
@@ -161,7 +165,7 @@ if False: # Save mosaic with an overlay by supplying a positive value for overla
     master.output_to_image(dict(overlay_alpha = 100)) ## 0 to 255
 
 
-if True: # Test max_instances, replace_all_instances, and blocklist
+if False: # Test max_instances, replace_all_instances, and blocklist
     piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztempdb100/',max_instances = 2 )
     base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Tests/MaxInstances/AllBlack.PNG'
     #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Miho/CloseUp/CloseUp.jpg'
