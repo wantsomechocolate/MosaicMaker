@@ -4,8 +4,7 @@
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
-from PIL import Image
-from PIL import ImageOps
+from PIL import Image, ImageOps, ImageFilter
 
 import numpy as np
 import os, copy
@@ -227,7 +226,16 @@ class Mosaic:
 				## a map on init to automatically set these values for each section?
 				## or maybe a defult type like center-out for the priority?
 				self.grid[h_section][w_section].pinned = False
+
+				## I'm having trouble figuring out where to put the default of radial
+				## I also want to be able to allow users to write custom prioritizing functions?
 				self.grid[h_section][w_section].priority = 0
+
+		## I want this to be the default priority methodology. It makes sense to reset this based on granularity
+		## It makes less sense to reset the priority of each section when just swapping out the target image,
+		## but right now when a new target image is chosen, all the sections are completely remade, so 
+		## this is the way it has to be at the moment. 
+		self.set_section_priority_radial()
 
 
 	## For treating the target image argument. 
@@ -316,36 +324,26 @@ class Mosaic:
 
 		## WHERE THE MAGIC HAPPENS
 
-		## 1/30/21
-		## Ok so here I used to go through each section in order, but now I want to be able to 
-		## adjust the section priority, so instead of going in order, I just need to put all the sections in a list
-		## and sort the list based on priority, then go through that list in order.
-		sections_list = [self.grid[h_section][w_section] for h_section in range(self.h_sections) for w_section in range(self.w_sections)]
-		sections_list.sort(key=lambda x: (x.priority is None, x.priority), reverse = True)
-
-		## Compare each section to each piece 
-		## I want to implement the ability to keep track of the progress here
-		## Currently I do it by printing x in the shape of the mosaic, but that won't work on the front end. 
-		## total_sections = self.h_sections * self.w_sections (this might be useful later)
-		## Right now, comparison function puts the error on object 2 (the 2nd argument)
+		## I used to go through each section in order left to right, top to bottom.
 
 		#for h_section in range(self.h_sections):			
 		#	print('')
 		#	for w_section in range(self.w_sections):
 		#		print('x', end = '')
-		
-		#total_sections = self.h_sections * self.w_sections
 
+		## Now instead of that I sort all the sections based on priority order and loop through that. 
+		sections_list = [self.grid[h_section][w_section] for h_section in range(self.h_sections) for w_section in range(self.w_sections)]
+		sections_list.sort(key=lambda x: (x.priority is None, x.priority), reverse = True)
+
+		## Compare each section to each piece - keeping track of progress here will be useful later. 
 		progress1 = progress2 = 0
 		for i in range(len(sections_list)):
-
-			## The goal is to assign a single numerical value to each piece 
-			##   indicating it's similarity to the current section
+			## The goal is to assign a single numerical value to each piece indicating it's similarity to the current section
 			for j in range(len(piece_list.pieces)):
 
-				## Reset obj1 and obj2 are useful when you want to save calculations 
-				## through iterations of the comparison function. 
+				## Reset obj1 and obj2 are useful when you want to save calculations through iterations of the comparison function. 
 				## For example, pieces only need to be reduced once, that result can then be used with every section. 
+				## Right now, comparison function puts the error on object 2 (the 2nd argument)
 				self.comparison_function( 		sections_list[i]								,	#self.grid[h_section][w_section]					,
 												piece_list.pieces[j] 							, 
 												
@@ -361,19 +359,20 @@ class Mosaic:
 			## Should I have choose match return the match instead of assigning directly to the coordinate given?
 			## Should I allow users to override cm so they are not limited to a single numerical value as selection criteria?
 			## I might want to save error results for all or many pieces at the section level. 
-			#self.choose_match( (h_section,w_section), piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[], opts=opts )
 			self.choose_match( sections_list[i].coordinates, piece_list.pieces, self.random_max, self.neighborhood_size, blocklist=[], opts=opts )
-			
+			## Could be section_list[i].piece = self.choose.......
+
+
 			## At this point, a given section has just finished being compared to all pieces. 
 			## More efficient might be to have comparison function save error results on obj1 for all obj2
 			## A workaround for now might be to just do something here (would require looping through all piece again)
 			## What's one more time though when you're already doing it hundreds of time lmao. 
 
-			progress2 = round(i*10/len(sections_list),0)
+			## For giving some user feedback on mosaics that take a long time to calculate?
+			progress2 = round(i*100/len(sections_list),0)
 			if progress1!=progress2:
 				print('#',end='')
 				progress1=progress2
-
 
 		print('')
 
@@ -391,41 +390,21 @@ class Mosaic:
 		## https://stackoverflow.com/a/18411610/1937423
 		pieces.sort(key=lambda x: (x.error is None, x.error))
 
-		## Collect all the neighbors to merge with the blocklist
+		## Collect all the neighbors to merge with the blocklist.
+		## Get_neighbors returns a list of grid sections, so you have to get the pieces from those sections first
 		neighbors = self.get_neighbors(coordinates, neighborhood_size) if neighborhood_size != 0 else []
-
-
-		## get_neighbors returns a list of grid sections, but I'm interested in the unique pieces contained within 
-		## all the neighbors because I'm not allowed to use those, I'm also interested in the pieces in blocklist
-		## So blocklist should be piece objects - not grid sections, because I should be able to theoretically
-		## block a piece that's not in any section yet. 
-		## I need a new function callled get_neighbor_pieces or somthing that does something like this. 
-		neighbor_pieces = [neighbor.piece for neighbor in neighbors if hasattr(neighbor,'piece')]
-
-		## now that neighbors is a list of pieces, and blocklist is a list of pieces, you can just add them together. 
+		neighbor_pieces = [neighbor.piece for neighbor in neighbors if hasattr(neighbor,'piece')] 
 		master_blacklist = neighbor_pieces+blocklist
 
-
-
-		## This is using the filename as the unique identifier for pieces at the moment
-		## Will hopefully change in the future when starting to use a database. 
+		## Right now, when a piece is blocklisted, it's error is just changed to None
+		## and None is handled on sort. I don't particularly like this method. 
 		for piece in master_blacklist:				
-			#if hasattr(item,'piece'):
-				## Find where the neighbor's piece is in the pieces list. Straight from SO baby. 
-				#piece = next((x for x in pieces if x.original_image.filename == item.piece.original_image.filename), None)
-
-				## Update it's error to be nothing (and properly handle None on sort)
-				## I'm not particularly happy about how I'm handling this atm. 
 			piece.error = None
 
 
-		## If a piece has been used it's max times, remove it from the list
-		## This is very inefficient because I'll be removing the same item multiple times, just want to see if it works, though. 
-		## I have no idea what this is using to determing sameness.
-		## HELP 
-		## So this is working, but I'd like to add something like a max_instances adder or something,
-		## I can do that wherever max instances is set if it's not specified. basically if it's 2, I want it to go up by 2
-		## every time, not 1, and not x2. fix later. Good to see that it's working as expected though. 
+		## If a piece has been used it's max times, set error to None
+		## If all pieces have been used max times, increase all pieces max instances by adding the original max instances
+		## e.g. 2 will become 4, then 6, 8, etc. 
 		counter=0
 		for piece in pieces:
 			if piece.appearances['qty']>=piece.max_instances:
@@ -436,17 +415,18 @@ class Mosaic:
 					piece.max_instances += piece.max_instances0
 
 
-		## Sort the list again, this time there will probably be some None now
-		## What happens when all are None?
+		## Sort the list again, this time there will probably be some None now. I'm not sure what happens if all are None. 
 		pieces.sort(key=lambda x: (x.error is None, x.error))		
 
 
-		## When you've finally chosen the piece
+		## When you've finally chosen the piece, apply any randomization
 		chosen_piece = pieces[ int(random()*random_max) ]
+
+		## Update the appearances information. 
 		chosen_piece.appearances['qty']+=1
 		chosen_piece.appearances['sections'].append(self.grid[coordinates[0]][coordinates[1]])
 
-		## Take the best match (or perhaps with a random offset)
+		## Directly update the section with the piece (or should I return the piece?)
 		self.grid[coordinates[0]][coordinates[1]].piece = chosen_piece
 
 
@@ -510,26 +490,19 @@ class Mosaic:
 		return self._unique_pieces
 
 		
-	## I want to have three ways to set section prio
-	## one is the simple inside out
-	## one is based on edge detection
-	## and one is just custom highlighting (I think this is the best)
-	## Or maybe a combination of 2 or 3 and inside out. 
-	def set_section_priority(self,bwp=0.1):
+	## SECTION PRIORITY
+
+	## This is the default, I also want to be able to allow for a reverse arg, but that's not implemented yet. 
+	def set_section_priority_radial(self,bwp=0.1,reverse=False):
 		w_sections_0 = self.w_sections - 1
 		h_sections_0 = self.h_sections - 1
-
 		bw = max(1,int( ( min( w_sections_0, h_sections_0 ) +1 ) *bwp))
 		nl = int( min( w_sections_0, h_sections_0 ) / (bw *2) )
-
 		for h_asc in range(self.h_sections):
 			h_des = h_sections_0 - h_asc
-			#print('')
 			for w_asc in range(self.w_sections):
 				w_des = w_sections_0 - w_asc
-
 				loop_num = min( min( min( nl, int(h_asc/bw) ), min( nl, int(h_des/bw) ) ), min( min( nl, int(w_asc/bw) ), min( nl, int(w_des/bw) ) ) )
-				#print(loop_num,end='')
 				self.grid[h_asc][w_asc].priority = loop_num
 
 	def show_section_priority(self):
@@ -539,20 +512,39 @@ class Mosaic:
 				print(str(self.grid[i][j].priority).zfill(2),end=' ')
 
 
-	def set_section_priority_edges():
+	def set_section_priority_edges(self, radius = 2, kernel = ImageFilter.FIND_EDGES):
 		
-		img_orig = Image.open(self.target.img)
-		img_bnw = img_orig.convert('L')
-		img_blur = img_bnw.filter(ImageFilter.GaussianBlur(radius=2))
-		img_edges = img_blur.filter(ImageFilter.FIND_EDGES)
-
+		#if kernel == None:
+		#	kernel = ImageFilter.FIND_EDGES
+		self.target.img_bnw = self.target.img.convert('L')
+		self.target.img_blur = self.target.img_bnw.filter(ImageFilter.GaussianBlur(radius=radius))
+		#self.img_edges = self.img_blur.filter(ImageFilter.FIND_EDGES)
+		self.target.img_edges = self.target.img_blur.filter(kernel)
 		##img_laplace = img_blur.filter(ImageFilter.Kernel((3, 3), (-1, -1, -1,
 		##					      -1,  8, -1,
 		##					      -1, -1, -1), 1, 0))
 
-		## This creates an images that has only edges in it
-		## now I have to go through and see which sections have the most edges and
-		## give them the highest priority! but next time I'm super sleepy. 
+		## This creates an images that has only edges in it (edges are white, rest of image is black)
+		## now I have to go through and see which sections have the most edges (most white) and
+		## give them the highest priority? 
+		## https://cyroforge.wordpress.com/2012/01/21/canny-edge-detection/
+
+		target_image_edges = MosaicImage( self.target.img_edges )
+		edge_master = Mosaic(target_image_edges, granularity=self.granularity)
+		#from comparison_functions import reduce_functions as rf
+		#import numpy as np
+		#np.mean(edge_master.grid[2][8].rgb_data)
+		intensities = [edge_master.grid[i][j].rgb_data for i in range(edge_master.h_sections) for j in range(edge_master.w_sections)]
+		whiteness = []
+		for item in intensities:
+			whiteness.append(np.mean(item))
+		hist, bin_edges = np.histogram(whiteness)
+		priority = np.digitize(whiteness,bin_edges)
+
+		for i in range(self.h_sections):
+			for j in range(self.w_sections):
+				self.grid[i][j].priority = priority[j+i*self.w_sections]
+
 
 	## #########################################################################################
 	## TOUCH UP FUNCTIONS
@@ -729,7 +721,7 @@ body {{background:black;
 	width:{image_container_width}px;}}
 .col img {{padding:0px;
 	margin:0px;
-	opacity:0.68;
+	opacity:1;
 	height:{section_dim}px;
 	width:{section_dim}px;}}
 .row {{width:100%;

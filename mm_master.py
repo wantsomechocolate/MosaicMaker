@@ -15,12 +15,15 @@ if True:
         ## PIECE LIST - Create a piece_list - a list of MosaicImage objects that have been cropped as squares and resized to the default piece size.
         #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztempdb100/',max_instances = 2 )
         #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/pieces/',max_instances = 30 )
-        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztemepdb/',max_instances = 2 )
+        #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztemepdb/',max_instances = 3 )
+        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/ClimbingProject/James/pieces-groomed/',max_instances = 5 )
 
         ## TARGET IMAGE - can be a path, a PIL Image object, or a MosaicImage object
         #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/Sun/Demi.jpg'
-        base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Anqi/Anqi-05/mud_mask.JPG'
+        #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Anqi/Anqi-05/mud_mask.JPG'
         #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Tests/MaxInstances/AllBlack.PNG'
+        #base_image_filepath = r'C:\Users\wants\Projects\Recreational\Programming\Code\MosaicMakerImages\mosaics\Anqi\Anqi-01\Anqi-01.png'
+        base_image_filepath = r'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/ClimbingProject/James.png'
         target_image = mm.MosaicImage( base_image_filepath )
         
 
@@ -33,8 +36,7 @@ if True:
         ## Below is an example of using the build comparison function to create a 'custom' comparison function, which in this case is just equivalent to specifying the same
         ## reduce and error functions separately.
         #comparison_function = cf.build_comparison_function(cf.reduce_functions.average, cf.error_functions.rmse)
-        comparison_function = cf.build_comparison_function(cf.reduce_functions.average, cf.error_functions.rmse)
-
+        
 
         ## MOSAIC OBJECT - The Mosaic class accepts filepath, pillow image object, or mosaic image object as first arg. 
         master = mm.Mosaic(
@@ -42,34 +44,23 @@ if True:
             ## The only positional argument for initializing the mosaic is the target image
             target_image,
             ## This determines how many sections to cut the target image up into. Its a percentage of the target image's smaller dimension. 
-            granularity=1/32,
+            granularity=1/30,
             ## The comparison Functions! You can supply a custom one to comparison_function, or you can override the reduce and error function individually
-            comparison_function=comparison_function,
+            #comparison_function=comparison_function,
             #reduce_function=cf.reduce_functions.average,
             #error_function=cf.error_functions.luv_low_cost_approx,
             
             ## These things govern how the comparison functions operate, look at the class for more information. I'm considering putting all of these things into opts. 
-            f=3,
+            f=1,
             rgb_weighting = (1,1,1),
             random_max=0,
-            neighborhood_size = 3,
+            neighborhood_size = 0,
 
             ## Additional parameters. I think this can be used for info needed for custom comparison functions. 
             opts=dict() )
 
-        
 
-
-        ## I still want to give the option to override the comparison function, but how do I want to do it and is it worth it?
-        ## Because you can just change it on the mosaic? and do I really want to get the 
-        ## function to use from each section? That would pretty nuts. 
         # master.create(piece_list, opts= dict(num_clusters = 15) )
-
-        #hahahahahahahahaha this is good to know, if you go to create another mosaic - all the instance counts in the piece list need to be zeroed out,
-        ## another reason to have the piece list be part of the mosaic, I think I might be turning towards the light.
-        ## Yeah, something like a directory will do, but a list of mosaic image objects is better? or maybe even just a query or some shit? I'll figure it out
-        ## the bottom line is that the more sophisticated you get, the more intertwined piece_list and master become. 
-
         master.create(piece_list)
 
 
@@ -79,15 +70,49 @@ if True:
         master.output_html()
         #master.output_to_image()
 
-        master.set_section_priority()
-        master.create(piece_list)
-        master.output_html()
 
 
 ## ##############################################################################################################################################
 ## EXPERIMENTS AND TESTS
 ## ##############################################################################################################################################
+
+if False: ## go through the different methods of setting section priority
+        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/ClimbingProject/James/pieces-groomed/',max_instances = 5 )
+        base_image_filepath = r'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/ClimbingProject/James.png'
+        target_image = mm.MosaicImage( base_image_filepath )
+        master = mm.Mosaic(target_image, granularity=1/50, f=5, rgb_weighting = (1,1,1), random_max=0, neighborhood_size = 5, opts=dict() )
+
+        ## With default priority (currently right to left top to bottom
+        master.create(piece_list)
+        master.output_html()
+
+        ## with radial priority
+        master.set_section_priority_radial()
+        master.create(piece_list)
+        master.output_html()
+
+        ## with priority determined using edges.
+        master.set_section_priority_edges()
+        master.create(piece_list)
+        master.output_html()
+
+        ## with priority determined using facial recognition dlib (not ready yet)
         
+
+if False: ## Set section priority and create a mosaic
+    target_image = mm.MosaicImage('C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Anqi/Anqi-05/mud_mask.JPG')
+    master = mm.Mosaic(target_image)
+    master.set_section_priority_edges()
+    piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztemepdb/',max_instances = 2 )
+    master.create(piece_list)
+    master.output_html()
+
+    ## Get the edges image from the original master and use it to create an edge master
+    ## loop through all the sections and calculate the average amount of white?
+    ## bin all the values into n priority bins and then somehow get the priority mapped back onto the original master?
+    
+    
+
 
 if False: ## Loop through setting and note the time that it takes for a bunch of different ones
     from datetime import datetime
