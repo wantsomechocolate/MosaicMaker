@@ -1,0 +1,43 @@
+So how do I start making this a web site?
+
+if I right click on an image and do update_all_instances
+my options are to have javascript go to each one and update it,
+or have it send back to the server - update all instances of this guy
+then the server does it all, 
+then it sends back a list of stuff. javascript iterates through the list to update the affected photos
+
+
+The main way to communicate between the html grid and the server is going to be javascript I think
+the page should be able to handle receiving a list of instruction and create and modify the grid. 
+
+Yeah I guess the first thing to do would be to get one of the mosaic pages loaded using django as the front end
+maybe even setup a remote database and amazon s3? nah I want to keep everything local for now. So a local database and regular filesystem. 
+I don't want to pay any money for anything yet. 
+
+So I have to setup a new Django project :/
+
+What do I want the structure of everything to be?
+Do I want 4 different apps?
+one for handling the mosaic objects
+one for handling image objects? this might be best inside the mosaic app?
+one for handling piecelists? Maybe this is also a little crazy?
+one for getting new pictures from various sources (web, google account, etc?) - I think this one kind of makes sense?
+I can put the logic for using google CSE and google photos api here? probably also the logic for storing thumbnails here?
+
+So maybe two apps?
+One for retrieving curating saving etc images (where do I put the comparison stuff?)
+one for the mosaic?
+
+But where does the MosaicImage class go (used by both piecelist and mosaic)
+Where do the image reduction and comparison algorithms go? should this be an django app or should it just be a module
+which one is more easily pluggable by users (the point of having them be separate in the first place)
+
+There was also talk of having piecelist be part of the mosaic, in that case, it might make sense for everything to be one app
+Does it really matter how many apps I have, I mean, how many of these things would I really be reusing, everything here except for the google custom search engine and google photos api is probably never going to be reused?
+
+Ok so one app for interfacing with common apis (can do this later if I actually want to)
+one app for all the mosaic related stuff. 
+ 
+
+ 
+or is one app good for me?

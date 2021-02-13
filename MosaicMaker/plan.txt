@@ -1,0 +1,36 @@
+Plan?
+1. Get program to run again? With python 2.7? Newest version of python? - is this worth it? Maybe it's just best to start with a Django project?
+2. Improve program so that images are saved for later use instead of using links?
+3. Only allow squares to be saved the square shall be the largest center square of each image? Or maybe it's better to save the image (what default resolution?) and then enforce the square thing later?
+
+
+
+
+I think it would be best to get a local version working that doesn't use any API's or remote databases, just good ol. sqlite and file system.
+
+
+Have a bunch of images saved in reduced resolution on the filesystem somewhere. 
+
+There needs to be a function for fetching the images,
+a function for choosing resultion of saved images,
+
+Put all the images in memory?, oh no wait, I think I save the images with their rgb summary data?
+Should I only save square images? or cut out the square during runttime so that I can look at other parts of the image in subsequent versions? yeah I think just savings original aspect and taking the largest square, have two options for center top or center center. 
+
+as for saving the images with their rgb summary data, do I save f1? f2? f3? f4? I guess I can just go all the way down to f5? and save each one in a different field? or should I save that whole blob in a single field for that method of comparison? and have a single field for metadata associated with other methods?
+
+That would make it a little bit annoying to recognize when certain pictures don't have a particular fineness already calculated, forcing me to calculate it on the fly.....
+
+Maybe a table per comparison method would be better? but then I'd have multiple tables all referencing the images table? That's fine though I suppose?
+
+This is too much needless complication right now. So pick a default fineness and go with that for now (f3). 
+
+So the images need to have tags associated with them so that the tags can be used to gather images when a new mosaic is being made. 
+
+images should be tagged with dominant color, dominent content, and that's more than enough for now I think. 
+
+It might behoove me to get the image search api working in order to automatically save images with the search term and use pillow to get the dominant color NO rgba (for now), it ruins everything. That way I can also automatically save a reduced resolution of the picture (I'm thinking max 500x500? whatever, just try it) and the fineness data. 
+
+
+So step number one is still get the images saved :/ 
+what did I do before?

@@ -1,0 +1,38 @@
+## To Do List
+# Make improvements to my ave rgb comparison algorithm!
+# Write an output function that just creates an image directly
+#      I did this and it was incredibly slow
+# Write another comparison function and test out how it would work to switch between them.
+
+
+
+Notes about user stuff
+Make mosaics a group thing, have people link over their own google photo albums? annotate single photos, instances of photos?
+
+
+
+# So I have a function that can obtain 10 image search results,
+# Options:
+# go through the 10 links one at a time, get the image, save the image in the database
+# go through all 100 results and get all 100 image links
+# then go through the image links one at a time and try to get the image data and save in the database
+
+
+
+
+
+# So this part of the program is just responsible for getting and saving images, after the image is saved, I don't really
+# care about the image link, but I'll probably still save it so I can see if it's still there later or something. 
+# After it's saved I just care about populating a custom image mosaic with it, and the best part I think is that because
+# I'll be using NW.js I can probably create the photo mosaic image pretty easily. although it'll likely be quite large.
+
+# So for this function, I think it's easiest to make the 10 api calls, get the 100 image links,
+# than shoot that over to another function that fetches the images, resizes, and saves to the database, one at a time
+# if something fails along the way to saving an image, whatever, who cares.
+
+# this is just one way to populate images in the database, though.
+# the user can also add their own images, but do I enforce the resize when saving user images?
+# or do I resize on the fly? do I let the program pull images from other locations on the file system?
+# the complication about doing this is that I wouldn't have the image data in the database, so I think
+# it's probably best if I let the user 'upload' images into the app so that they can be resized and saved and 
+# all the images can be a part of one big happy family. 
