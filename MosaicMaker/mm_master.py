@@ -14,7 +14,7 @@ if True:
 
         ## PIECE LIST - Create a piece_list - a list of MosaicImage objects that have been cropped as squares and resized to the default piece size.
         #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztempdb100/',max_instances = 2 )
-        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztemepdb/',max_instances = 3 )
+        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztemepdb/',max_instances = 10 )
         #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/ClimbingProject/James/pieces-groomed/',max_instances = 5 )
 
         ## TARGET IMAGE - can be a path, a PIL Image object, or a MosaicImage object
@@ -22,7 +22,7 @@ if True:
         #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Tests/MaxInstances/AllBlack.PNG'
         #base_image_filepath = r'C:\Users\wants\Projects\Recreational\Programming\Code\MosaicMakerImages\mosaics\Anqi\Anqi-01\Anqi-01.png'
         #base_image_filepath = r'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/ClimbingProject/James.png'
-        base_image_filepath = r'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Huangbo/EyeShadow1.jpeg'
+        base_image_filepath = r'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Anqi/Anqi-Beach/Anqi-Beach.jpg'
         target_image = mm.MosaicImage( base_image_filepath )
         
 
@@ -43,15 +43,15 @@ if True:
             ## The only positional argument for initializing the mosaic is the target image
             target_image,
             ## This determines how many sections to cut the target image up into. Its a percentage of the target image's smaller dimension. 
-            granularity=1/32,
+            granularity=1/50,
             ## The comparison Functions! You can supply a custom one to comparison_function, or you can override the reduce and error function individually
             #comparison_function=comparison_function,
             reduce_function=cf.reduce_functions.average,
-            error_function=cf.error_functions.luv_low_cost_approx,
+            error_function=cf.error_functions.sum_abs_error,
             
             ## These things govern how the comparison functions operate, look at the class for more information. I'm considering putting all of these things into opts. 
             f=5,
-            rgb_weighting = (1,1,1),
+            rgb_weighting = (0.8,1,1.1),
             random_max=0,
             neighborhood_size = 5,
 
