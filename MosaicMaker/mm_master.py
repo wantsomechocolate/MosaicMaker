@@ -51,13 +51,15 @@ if True:
             
             ## These things govern how the comparison functions operate, look at the class for more information. I'm considering putting all of these things into opts. 
             f=5,
-            rgb_weighting = (0.8,1,1.1),
+            rgb_weighting = (1,1.3,1),
             random_max=0,
             neighborhood_size = 5,
 
             ## Additional parameters. I think this can be used for info needed for custom comparison functions. 
             opts=dict() )
 
+
+        master.set_section_priority_radial_square(starting_section = (24,18))
 
         #master.create(piece_list, opts= dict(num_clusters = 15) )
         master.create(piece_list)

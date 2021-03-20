@@ -498,12 +498,28 @@ class Mosaic:
 		h_sections_0 = self.h_sections - 1
 		bw = max(1,int( ( min( w_sections_0, h_sections_0 ) +1 ) *bwp))
 		nl = int( min( w_sections_0, h_sections_0 ) / (bw *2) )
+
 		for h_asc in range(self.h_sections):
 			h_des = h_sections_0 - h_asc
 			for w_asc in range(self.w_sections):
 				w_des = w_sections_0 - w_asc
 				loop_num = min( min( min( nl, int(h_asc/bw) ), min( nl, int(h_des/bw) ) ), min( min( nl, int(w_asc/bw) ), min( nl, int(w_des/bw) ) ) )
 				self.grid[h_asc][w_asc].priority = loop_num
+
+
+	def set_section_priority_radial_square(self, starting_section = None, bwp=0.1, reverse=False, aspect = (1,1),  ):
+		w_sections_0 = self.w_sections - 1
+		h_sections_0 = self.h_sections - 1
+		bw = max(1,int( ( min( w_sections_0, h_sections_0 ) +1 ) *bwp))
+
+		center = (int((self.h_sections - 1)/2),int((self.w_sections - 1)/2)) if starting_section == None else starting_section 
+		for h_asc in range(self.h_sections):
+
+			for w_asc in range(self.w_sections):
+
+				loop_num = int( max(abs(center[0]-h_asc), abs(center[1]-w_asc)) / bw )+1
+				self.grid[h_asc][w_asc].priority = loop_num
+
 
 	def show_section_priority(self):
 		for i in range(self.h_sections):
