@@ -10,7 +10,7 @@ import comparison_functions as cf
 ## BASIC USAGE
 ## ##############################################################################################################################################
 
-if True:
+if False:
 
         ## PIECE LIST - Create a piece_list - a list of MosaicImage objects that have been cropped as squares and resized to the default piece size.
         #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztempdb100/',max_instances = 2 )
@@ -168,15 +168,19 @@ if False: ## Change the default thumbnail size
     master.output_to_image()
 
 
-if False: ## Create a mosaic of an image using its own sections as the pieces.
+if True: ## Create a mosaic of an image using its own sections as the pieces.
     mm.PIECE_DEFAULT_SAVE_SIZE = (128,128)
-    target_image = 'C:/Users/wants/Projects/Code/Recreational/Programming/MosaicMakerImages/mosaics/Joyce/Joyce/Joyce.png'
+    target_image = r'C:/Users/jamesm/Projects/Programming/MosaicMakerImages/Anqi/BWSmile/BWSmile.png'
     master = mm.Mosaic(target_image, granularity=1/16)
     piece_list_directory = master.save_sections()
     piece_list = mm.PieceList( piece_list_directory )
     master.granularity=1/32
+    master.f = 3
+    master.neighborhood_size = 5
+    master.set_section_priority_radial()
     master.create(piece_list)
-    master.output_to_image()
+    master.output_html()    
+    #master.output_to_image()
 
 
 if False: # Save mosaic with an overlay by supplying a positive value for overlay_alpha to the opts dict
