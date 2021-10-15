@@ -170,7 +170,7 @@ if False: ## Change the default thumbnail size
 
 if True: ## Create a mosaic of an image using its own sections as the pieces.
     mm.PIECE_DEFAULT_SAVE_SIZE = (128,128)
-    target_image = r'C:/Users/jamesm/Projects/Programming/MosaicMakerImages/Anqi/BWSmile/BWSmile.png'
+    target_image = r'C:\Users\JamesM\Projects\Programming\MosaicMakerImages\Anqi\BWSmile\BWSmile.png'
     master = mm.Mosaic(target_image, granularity=1/16)
     piece_list_directory = master.save_sections()
     piece_list = mm.PieceList( piece_list_directory )
