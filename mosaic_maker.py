@@ -15,9 +15,12 @@ from math import floor
 from yattag import Doc
 from yattag import indent
 
-import wantsomechocolate as wsc
+from MosaicMaker import wantsomechocolate as wsc
+#import wantsomechocolate as wsc
+
 #from comparison_functions import error_functions, reduce_functions, rgb_avg_comparison
-import comparison_functions as cf
+from MosaicMaker import comparison_functions as cf
+#import comparison_functions as cf
 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 

@@ -1,7 +1,10 @@
 #python3
 
-import comparison_functions.error_functions
-import comparison_functions.reduce_functions
+from MosaicMaker.comparison_functions import error_functions
+from MosaicMaker.comparison_functions import reduce_functions
+
+#import comparison_functions.error_functions
+#import comparison_functions.reduce_functions
 
 ## I think that comparison functions should be able to get a size to use for their analysis
 ## maybe the user wants to analyze a smaller size for speed, but still use a larger thumbnail for the stuff
