@@ -71,7 +71,7 @@ class MosaicImage:
 
 	## To allow for a string instead of an Image object
 	def __process_image_argument(self, img):
-		if type(img) == type('string'):
+		if type(img) is type('string'):
 			img = Image.open(img)
 		return img
 
@@ -485,8 +485,8 @@ class Mosaic:
 		for row in self.grid:
 			for obj in row:
 				if obj.piece.original_image.filename not in seen:
-					unique.append(obj)
-					seen.add(obj.piece.original_image.filename)
+					unique.append(obj.piece)
+					seen.add(obj) #.piece.original_image.filename)
 
 		self._unique_pieces = unique
 
@@ -762,9 +762,10 @@ body {{background:black;
 
 		## Sve the necessary items. Wait I thought the pieces class had a method for this?
 		for item in self.unique_pieces:
-			im = Image.open(item.piece.original_image.filename)
-			im_name = os.path.split(item.piece.original_image.filename)[-1]
-			im.save( os.path.join(pieces_save_directory,im_name))
+			#im = Image.open(item.piece.original_image.filename)
+			#im_name = os.path.split(item.piece.original_image.filename)[-1]
+			#im.save( os.path.join(pieces_save_directory,im_name))
+			item.img.save( os.path.join(pieces_save_directory,item.original_image.filename) )
 
 		## Save the target in there with everyone!
 		self._target.img.save( os.path.join( html_save_directory,'target.png' ) )
@@ -961,14 +962,60 @@ class PieceList:
 
 
 	def __process_pieces_arg(self,arg):
-		if arg == None:
-			pieces = []
-		elif os.path.isdir(arg):
-			self.directory = arg
-			pieces = self.__create_piece_list_from_directory(arg)
+
+		arg_type = type(arg)
+		
+		if arg_type is type(None):
+			pieces = []	
+
+		elif arg_type is type(str()):
+			if os.path.isdir(arg):
+				self.directory = arg
+				pieces = self.__create_piece_list_from_directory(arg)
+			else:
+				pieces = []
+		
+		elif arg_type is type(list()):
+			pieces = self.__create_piece_list_from_list_of_objects(arg)
+
 		else:
-			print ("WARNING: The argument supplied to PieceList was not an existing directory, assuming a piece_list was given.")
-			pieces = arg
+			warning = '''
+			WARNING: The argument supplied to PieceList was not a path or a list of objects with the img attribute.
+			'''
+			print (warning)
+			pieces = []
+
+		return pieces
+
+	## I plan to generalize this later so that a list of objects and the attribute to get at the images can be supplied
+	## or just a list of image objects could also be supplied. 
+	def __create_piece_list_from_list_of_objects(self,list_of_objects,attribute='img'):
+		pieces=[]
+		for item in list_of_objects:
+
+			piece_pillow_image = Image.open(getattr(item,attribute))
+
+			if hasattr(getattr(item,attribute),'name'):
+				piece_pillow_image.filename = os.path.basename(getattr(item,attribute).name)
+
+			piece_mosaic_image = MosaicImage(piece_pillow_image)
+			piece_mosaic_image.to_thumbnail(size = self._default_save_size)
+
+			piece_mosaic_image.max_instances = self._max_instances
+			piece_mosaic_image.max_instances0 = self._max_instances0
+			piece_mosaic_image.appearances = dict(	qty 					= 0 					, 
+													sections 				= [] 					, 
+													max_instances 			= self._max_instances 	, 
+													max_instances0 			= self._max_instances0 	,
+													max_instance_multiplier = 1 					,	)
+
+			# I hard coded some stuff dealing with 3 layer images, sorry. 
+			if piece_mosaic_image.rgb_data_shape[2] == 3:
+				pieces.append(piece_mosaic_image)
+
+
+		if len(pieces) == 0:
+			print("WARNING: No pieces were found in the given list")
 
 		return pieces
 
