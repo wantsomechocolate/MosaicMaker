@@ -840,7 +840,7 @@ body {{background:black;
 		''' remove all instances of a particular piece from a mosaic '''
 		pass
 		'''
-		Pass in a a coordinate
+		Pass in a coordinate
 
 		'''
 
@@ -1003,6 +1003,11 @@ class PieceList:
 
 			piece_mosaic_image.max_instances = self._max_instances
 			piece_mosaic_image.max_instances0 = self._max_instances0
+
+			#I need the original ref to the django db object, so I'm doing this for now, it feels ridiculous.
+			piece_mosaic_image.original_object = item
+
+
 			piece_mosaic_image.appearances = dict(	qty 					= 0 					, 
 													sections 				= [] 					, 
 													max_instances 			= self._max_instances 	, 
