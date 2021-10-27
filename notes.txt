@@ -5,7 +5,7 @@ https://doc.rust-lang.org/stable/book/ch01-02-hello-world.html
 ## Immediate To Do list
 Continue with piece pinning
 
-make opacity an arg to the output html function
+make opacity an arg to the output html function (separate from django)
 
 Check out facial recognition using the dlib library
 https://pypi.org/project/dlib/
@@ -120,60 +120,11 @@ This is starting to feel like piece_list should be part of mosaic again. hmmmmmm
 
 
 
+## Image Search Functionality can get roughly 60-100 images for a given query.
+## A base of 10,000 images is probably pretty good (of various colors or course)
 
 
-# So I have a function that can obtain 10 image search results,
-# Options:
-# go through the 10 links one at a time, get the image, save the image in the database
-# go through all 100 results and get all 100 image links
-# then go through the image links one at a time and try to get the image data and save in the database
-
-# When saving the image, should I:
-# save the image analysis I'll use to compare the images to the pieces of the target image?
-# Should I do that later, immediately after the images are saved? as a background process?
-# Should the desktop app ship with a base 1000 images so that the user can get started right away?
-# Do I even care about users?
-
-# I think it might slow things down, but I think it's best to save the reduced size of the image
-# what did I say again max dimension was 500x500? and then go back later after it's saved and do the image analysis on it
-# (after all images are saved I think), that way the user can say
-# I want this image analysis on all these images (maybe just use sql? or just have basic search like dom color and search query)
-
-# This seperates the image searching completely from the image analysis which I think is good
-
-# So this part of the program is just responsible for getting and saving images, after the image is saved, I don't really
-# care about the image link, but I'll probably still save it so I can see if it's still there later or something. 
-# After it's saved I just care about populating a custom image mosaic with it, and the best part I think is that because
-# I'll be using NW.js I can probably create the photo mosaic image pretty easily. although it'll likely be quite large.
-
-# So for this function, I think it's easiest to make the 10 api calls, get the 100 image links,
-# than shoot that over to another function that fetches the images, resizes, and saves to the database, one at a time
-# if something fails along the way to saving an image, whatever, who cares.
-
-# this is just one way to populate images in the database, though.
-# the user can also add their own images, but do I enforce the resize when saving user images?
-# or do I resize on the fly? do I let the program pull images from other locations on the file system?
-# the complication about doing this is that I wouldn't have the image data in the database, so I think
-# it's probably best if I let the user 'upload' images into the app so that they can be resized and saved and 
-# all the images can be a part of one big happy family. 
-
-
-
-
-
-
-
-## Old Notes that I removed from master
-        ## I still want to give the option to override the comparison function, but how do I want to do it and is it worth it?
-        ## Because you can just change it on the mosaic? and do I really want to get the 
-        ## function to use from each section? That would pretty nuts. 
-
-
-
-        #hahahahahahahahaha this is good to know, if you go to create another mosaic - all the instance counts in the piece list need to be zeroed out,
-        ## another reason to have the piece list be part of the mosaic, I think I might be turning towards the light.
-        ## Yeah, something like a directory will do, but a list of mosaic image objects is better? or maybe even just a query or some shit? I'll figure it out
-        ## The bottom line is that the more sophisticated you get, the more intertwined piece_list and master become. 
+## The bottom line is that the more sophisticated you get, the more intertwined piece_list and master become. 
 
 
 
@@ -193,118 +144,18 @@ This is starting to feel like piece_list should be part of mosaic again. hmmmmmm
 
 
 
-Additional Notes
-
-## To Do List
-# Make improvements to my ave rgb comparison algorithm!
-# Write an output function that just creates an image directly
-#      I did this and it was incredibly slow
-# Write another comparison function and test out how it would work to switch between them.
-
-
-
-Notes about user stuff
 Make mosaics a group thing, have people link over their own google photo albums? annotate single photos, instances of photos?
 
 
-
-# So I have a function that can obtain 10 image search results,
-# Options:
-# go through the 10 links one at a time, get the image, save the image in the database
-# go through all 100 results and get all 100 image links
-# then go through the image links one at a time and try to get the image data and save in the database
-
-
-
-
-
-# So this part of the program is just responsible for getting and saving images, after the image is saved, I don't really
-# care about the image link, but I'll probably still save it so I can see if it's still there later or something. 
-# After it's saved I just care about populating a custom image mosaic with it, and the best part I think is that because
-# I'll be using NW.js I can probably create the photo mosaic image pretty easily. although it'll likely be quite large.
-
-# So for this function, I think it's easiest to make the 10 api calls, get the 100 image links,
-# than shoot that over to another function that fetches the images, resizes, and saves to the database, one at a time
-# if something fails along the way to saving an image, whatever, who cares.
-
-# this is just one way to populate images in the database, though.
-# the user can also add their own images, but do I enforce the resize when saving user images?
-# or do I resize on the fly? do I let the program pull images from other locations on the file system?
-# the complication about doing this is that I wouldn't have the image data in the database, so I think
-# it's probably best if I let the user 'upload' images into the app so that they can be resized and saved and 
-# all the images can be a part of one big happy family. 
-
-
-
-
-
-
-
-
-
-
-
-Plan for when I was getting the project started up again
-
-
-Plan?
-1. Get program to run again? With python 2.7? Newest version of python? - is this worth it? Maybe it's just best to start with a Django project?
-2. Improve program so that images are saved for later use instead of using links?
 3. Only allow squares to be saved the square shall be the largest center square of each image? Or maybe it's better to save the image (what default resolution?) and then enforce the square thing later?
 
 
 
 
-I think it would be best to get a local version working that doesn't use any API's or remote databases, just good ol. sqlite and file system.
 
 
-Have a bunch of images saved in reduced resolution on the filesystem somewhere. 
+Images that have transparencies should not be used. If I ever start saving some of these images, 4 channel images can just be turned into 3 channel images, or I can make the mosaic background white, but I shouldn't have to rely on that. 
 
-There needs to be a function for fetching the images,
-a function for choosing resultion of saved images,
-
-Put all the images in memory?, oh no wait, I think I save the images with their rgb summary data?
-Should I only save square images? or cut out the square during runttime so that I can look at other parts of the image in subsequent versions? yeah I think just savings original aspect and taking the largest square, have two options for center top or center center. 
-
-as for saving the images with their rgb summary data, do I save f1? f2? f3? f4? I guess I can just go all the way down to f5? and save each one in a different field? or should I save that whole blob in a single field for that method of comparison? and have a single field for metadata associated with other methods?
-
-That would make it a little bit annoying to recognize when certain pictures don't have a particular fineness already calculated, forcing me to calculate it on the fly.....
-
-Maybe a table per comparison method would be better? but then I'd have multiple tables all referencing the images table? That's fine though I suppose?
-
-This is too much needless complication right now. So pick a default fineness and go with that for now (f3). 
-
-So the images need to have tags associated with them so that the tags can be used to gather images when a new mosaic is being made. 
-
-images should be tagged with dominant color, dominent content, and that's more than enough for now I think. 
-
-It might behoove me to get the image search api working in order to automatically save images with the search term and use pillow to get the dominant color NO rgba (for now), it ruins everything. That way I can also automatically save a reduced resolution of the picture (I'm thinking max 500x500? whatever, just try it) and the fineness data. 
-
-
-So step number one is still get the images saved :/ 
-what did I do before?
-
-
-
-
-
-
-Old readme:
-
-
-
-## Problems
-Large patches of the same color will be filled with the same image. To get around this I find the 5 images with the lowest error and then pick one at random. It theoretically brings the image quallity down, but I feel that it's worth it to prevent the large areas with the same image. A better way would be to let the user highlight certain areas for randomization, or intelligently pick the areas, that way other areas can still use the best match. 
-
-Images in the mosaic are currently being resized to match the aspect ratio of the original base image. I did this as a first pass so that there would be the same number of images across and down. It is not the desired behavior. I think I might solve this one by allowing the user to choose. The three options that come to mind are the current setup (match aspect ratio to base image), square, 8.5x11 (for printing really large mosaics. 
-
-A related issue to the above is that the images aren't being placed in a rectangle of a certain AR, they are being stretched. It would be much better behavior to place the image in it's section without stretching, if it doesn't fit, then pick a new image? Stretch to fit? I think I might be able to filter out certain images sizes on search. The issue that arises from placing an image in a section and having some cutoff is that there becomes a best way to place the image, how do I calculate that without taking forever. It already takes 8 minutes on my computer to fill 1000 spots with a pool of 1700 images. If I also have to move the images around each spot that could go up by a lot. I guess the first pass would be to default to centering the image (like a desktop background on fill mode).
-
-It happens very often that images will no longer be available. I need to figure out how to replace these images via javascript on load and edit the original html document and the log file containing all the links and rgb data when that occurs. Brainstorm on how to select new image.
-
-Images that have transparencies should not be used. Otherwise, the background is visible through the image. If I ever start saving some of these images, 4 channel images can just be turned into 3 channel images, or I can make the mosaic background white, but I shouldn't have to rely on that. 
-
-There are more, but I can't think of them right now. 
 
 ## Future Work
 When I have a web-based version of this, free users will have limited options for the size of the query images and base images, and how many queries they can have at one time etc. This is so that bandwith doesn't get crazy. Paid users will have the ability to make much "larger" mosaics. 

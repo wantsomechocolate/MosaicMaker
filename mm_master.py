@@ -10,19 +10,14 @@ import comparison_functions as cf
 ## BASIC USAGE
 ## ##############################################################################################################################################
 
-if False:
+if True:
 
         ## PIECE LIST - Create a piece_list - a list of MosaicImage objects that have been cropped as squares and resized to the default piece size.
-        #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztempdb100/',max_instances = 2 )
-        piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/zztemepdb/',max_instances = 10 )
-        #piece_list = mm.PieceList( 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/ClimbingProject/James/pieces-groomed/',max_instances = 5 )
+        piece_list = mm.PieceList( 'C:/Users/JamesM/Projects/Programming/MosaicMakerImages/zztempdb',max_instances = 10 )
+
 
         ## TARGET IMAGE - can be a path, a PIL Image object, or a MosaicImage object
-        #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Anqi/Anqi-05/mud_mask.JPG'
-        #base_image_filepath = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Tests/MaxInstances/AllBlack.PNG'
-        #base_image_filepath = r'C:\Users\wants\Projects\Recreational\Programming\Code\MosaicMakerImages\mosaics\Anqi\Anqi-01\Anqi-01.png'
-        #base_image_filepath = r'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/ClimbingProject/James.png'
-        base_image_filepath = r'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Anqi/Anqi-Beach/Anqi-Beach.jpg'
+        base_image_filepath = r'C:\Users\JamesM\Projects\Programming\MosaicMakerImages\木子\Portrait.jpg'
         target_image = mm.MosaicImage( base_image_filepath )
         
 
@@ -51,15 +46,15 @@ if False:
             
             ## These things govern how the comparison functions operate, look at the class for more information. I'm considering putting all of these things into opts. 
             f=5,
-            rgb_weighting = (1,1.3,1),
+            rgb_weighting = (1,1,1),
             random_max=0,
             neighborhood_size = 5,
 
             ## Additional parameters. I think this can be used for info needed for custom comparison functions. 
             opts=dict() )
 
-
-        master.set_section_priority_radial_square(starting_section = (24,18))
+        #master.set_section_priority_radial()
+        #master.set_section_priority_radial_square(starting_section = (24,18))
 
         #master.create(piece_list, opts= dict(num_clusters = 15) )
         master.create(piece_list)
@@ -69,7 +64,7 @@ if False:
         ## Save your hard work - will by default save to a subdirectory of the target image.
         ## And you, uhhhh, actually can't change that behavior at the moment, lol. 
         master.output_html()
-        #master.output_to_image()
+        master.output_to_image()
 
 
 
@@ -168,7 +163,7 @@ if False: ## Change the default thumbnail size
     master.output_to_image()
 
 
-if True: ## Create a mosaic of an image using its own sections as the pieces.
+if False: ## Create a mosaic of an image using its own sections as the pieces.
     mm.PIECE_DEFAULT_SAVE_SIZE = (128,128)
     target_image = r'C:\Users\JamesM\Projects\Programming\MosaicMakerImages\Anqi\BWSmile\BWSmile.png'
     master = mm.Mosaic(target_image, granularity=1/16)

@@ -1,3 +1,25 @@
+## What is my goal for this module
+## To take in query info and return image... links?
+## on the web version I'll want to view thumbnails and decide who to save and who not to save right?
+## but just using the script I just want it to return links, because in the end I want django to save the images as 512x512 thumbnails. 
+## I also think I should add in a default zoom of 125% - Done
+
+#Super low prio
+## other options are how to cut out the square - vertical align, horizontal align, should this image fetching thing be part of the pieces library?
+## oh yeah, I should try and figure out a way to find duplicate images, there must be a python library for that already
+
+## More worthwhile I think 
+## could also do it based on file name
+
+## another argument for making this part of the pieces library is that when the pieces are saved it would be useful to save the dominiant color and the search query
+## but in django, is it the pieces object that saves the pieces to the db? right now it's just a script that uses the pieces library and then saves it outside
+## of the pieces object. I don't want to take over the mosaic library so that it can only be used effectively in django. 
+
+
+## Perhaps this should just spit out a list of urls, then maybe the pieces library should be modified to handle a list of urls on init
+## it would take the urls and create a piece for each one of the specified thumbnail size, square, etc
+## the one foggy bit is where would the info about the query go? I want to save that information. and dominent color and all that. 
+
 
 ## IMPORTS
 import os, requests
@@ -13,21 +35,11 @@ from pathlib import Path
 
 ## THINGS THAT SHOULD GO IN A YAML
 MAX_ITEMS=100
-IMG_SAVE_SIZE = (128,128)
+IMG_SAVE_SIZE = (512,512)
 IMG_DEFAULT_EXT = '.png'
-#DEFAULT_SAVE_PATH = 'C:/Users/wants/Projects/Code/MosaicMakerImages/zztemepdb/'
-DEFAULT_SAVE_PATH = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/mosaics/Demi/pieces - chongqing'
-DB_LOCATION_GLOBAL = 'C:/Users/wants/Projects/Recreational/Programming/Code/MosaicMakerImages/image_sources/mosaicmaker_db.sqlite'
+DEFAULT_SAVE_PATH = 'C:/Users/JamesM/Projects/Programming/MosaicMakerImages/zzSearchQueries'
+DB_LOCATION_GLOBAL = 'C:/Users/JamesM/Projects/Programming/MosaicMakerImages/mosaicmaker_db.sqlite'
 # DB_LOCATION = os.environ("MOSAIC_MAKER_DB_LOCATION")
-
-
-
-## I've learned that building the image library is very important
-## finding duplicates in both filename and actual image data
-## solve the rotating image problem
-## save original aspect ratio so individual photos can be slide either up/down or left/right, or I guess zoomed in on? hahaha
-
-
 
 
 #####################################################################################
@@ -57,14 +69,13 @@ def cse_basic_api_call(q, **kwargs):
 	return res
 
 
-
 ## To test the simple request function
-if False:
-	res = cse_basic_api_call(	"sunset" 						,
-								searchType 			=	'image'	,
-								imgDominantColor	=	'black'	,
-								#imgSize 			=	'large'	,
-								start=11						,		)
+#if False:
+#	res = cse_basic_api_call(	"sunset" 						,
+#								searchType 			=	'image'	,
+#								imgDominantColor	=	'red'	,
+#								#imgSize 			=	'large'	,
+#								start=11						,		)
 
 
 ## Loop over cse_basic_api_call function and make enough calls to get all items less than max items
@@ -95,15 +106,14 @@ def cse_iterator(q, **kwargs):
 	
 	return res_list
 
-
 ## To test the wrapper for the single request function to make API requests to get items below MAX_ITEMS
-if False:
-	res_list = cse_iterator(	"sunset"						,
-								searchType 			=	'image'	,
-								imgDominantColor 	=	'black'	,
-								imgSize 			=	'large'	,
-								start 				= 	1		,
-								num 				= 	10		,	)
+#if False:
+#	res_list = cse_iterator(	"sunset"						,
+#								searchType 			=	'image'	,
+#								imgDominantColor 	=	'red'	,
+#								imgSize 			=	'large'	,
+#								start 				= 	1		,
+#								num 				= 	10		,	)
 
 
 #####################################################################################
@@ -120,7 +130,6 @@ if False:
 def img_fh_from_url(url):
 
 	## Uses requests, io, and PIL
-
 	filename = url.split("/")[-1]
 
 	try:
@@ -181,10 +190,28 @@ def img_resize_to_def_save_size(img):
 
 
 
-def img_save(img,path = DEFAULT_SAVE_PATH):
+def img_crop_out_border(img,border_size_percent = 0.1):
+	'''takes an image and a number as the percent of the shorter dimention of the image to remove from the border of the image'''
+	crop_size = int(min(img.size)*border_size_percent)
+	new_img =  img.crop([crop_size,crop_size,img.width - crop_size, img.height - crop_size])
+
+	if hasattr(img,'filename'):
+		new_img.filename = img.filename
+
+	return new_img
+
+
+
+def img_save(img,path = DEFAULT_SAVE_PATH): #, filepath = None, query = None):
 
 	import base64
+	import os
+	from datetime import datetime
 
+	#try:
+	#new_filename = os.path.splitext(os.path.basename(filepath))[0]+" - "+query+int(datetime.timestamp(datetime.utcnow()))
+
+	#except:
 	new_filename = base64.urlsafe_b64encode( Path(img.filename[:50]).stem.encode('utf-8') ).decode('utf-8') + IMG_DEFAULT_EXT
 	
 	fp = os.path.join(path,new_filename)
@@ -205,15 +232,16 @@ def img_save(img,path = DEFAULT_SAVE_PATH):
 		return None
 
 	return img
-	
+
 
 ## Test the above functions - go from url to img saved on disk
-if False:
-	url = 'https://images-na.ssl-images-amazon.com/images/I/51pkwlSX97L._AC_.jpg'
-	img_orig = img_fh_from_url(url)
-	img_crop = img_crop_center(img_orig)
-	img_resized = img_resize_to_def_save_size(img_crop)
-	img_final = img_save(img_resized)
+#if False:
+#	url = 'https://images-na.ssl-images-amazon.com/images/I/51pkwlSX97L._AC_.jpg'
+#	img_orig = img_fh_from_url(url)
+#	img_crop = img_crop_center(img_orig)
+#	img_zoom = img_crop_out_border(img_crop)
+#	img_resized = img_resize_to_def_save_size(img_zoom)
+#	img_final = img_save(img_resized)
 
 
 
@@ -311,6 +339,9 @@ if False:
 	row_id_res = save_res_to_db(res)
 	res['query_row_id']=row_id_res	
 
+
+## This needs to be rewritten for django
+## There is no need save anything in a db unless it's in django
 def save_item_to_db(res,item, path = DEFAULT_SAVE_PATH):
 	url 				= item['link']
 	filepath 			= url_to_filepath(url)
@@ -332,7 +363,7 @@ def save_item_to_db(res,item, path = DEFAULT_SAVE_PATH):
 			
 			img_crop = img_crop_center(img_orig)
 			img_resized = img_resize_to_def_save_size(img_crop)
-			img_final = img_save(img_resized, path)
+			img_final = img_save(img_resized, path) #, filepath = None)
 
 			query_string = f''' INSERT INTO img_source 
 								(   filepath  ,  queryRef   ,  url   ,   groupDesignation  ,  relatedQuery   ,  imgMode    ) 
@@ -368,7 +399,6 @@ if __name__ == "__main__":
 
 	#pass
 
-
 	## Reached my daily limit, but I have 86-ish images I 
 	## can use to start messing around with the image matching algorthm
 	
@@ -380,14 +410,14 @@ if __name__ == "__main__":
 		#res = str_to_dict(res)
 	#res_list=[res]
 
-	query_list = ["重庆夜色","重庆春节"]
+	query_list = ["Lijiang"]
 
 	for query in query_list:
 
 		res_list = cse_iterator(	query 					,
 								searchType 	= 'image'	,
 								#imgDominantColor = 'yellow',
-								#imgSize = 'large',
+								imgSize = 'XLARGE',
 								start 		= 1			,
 								num 		= 10		,	)
 
@@ -397,6 +427,4 @@ if __name__ == "__main__":
 			items 				= 	res['items']
 
 			for item in items:
-				## This currently doesn't save the image as a blob, which I dont reaaaally want anyway at the moment
 				save_item_to_db(res,item,os.path.join(DEFAULT_SAVE_PATH,query))
-	

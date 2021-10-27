@@ -15,19 +15,22 @@ from math import floor
 from yattag import Doc
 from yattag import indent
 
-from MosaicMaker import wantsomechocolate as wsc
-#import wantsomechocolate as wsc
+try:
+	from MosaicMaker import wantsomechocolate as wsc
+except ImportError:
+	import wantsomechocolate as wsc
 
-#from comparison_functions import error_functions, reduce_functions, rgb_avg_comparison
-from MosaicMaker import comparison_functions as cf
-#import comparison_functions as cf
+try:
+	from MosaicMaker import comparison_functions as cf
+except ImportError:
+	import comparison_functions as cf
 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
 ## Should come from a configuration file at some point. 
-PIECE_DEFAULT_SAVE_SIZE = (128,128)
+PIECE_DEFAULT_SAVE_SIZE = (512,512)
 PIECE_ACCEPTED_FILETYPES = ['.png','.jpg']
 IMAGE_DEFAULT_COMPARISON_SIZE = (64,64)
 
@@ -999,24 +1002,66 @@ class PieceList:
 				piece_pillow_image.filename = os.path.basename(getattr(item,attribute).name)
 
 			piece_mosaic_image = MosaicImage(piece_pillow_image)
-			piece_mosaic_image.to_thumbnail(size = self._default_save_size)
 
-			piece_mosaic_image.max_instances = self._max_instances
-			piece_mosaic_image.max_instances0 = self._max_instances0
+			## sometimes thumbnailing breaks because of the following error I believe the warning is related:
 
-			#I need the original ref to the django db object, so I'm doing this for now, it feels ridiculous.
-			piece_mosaic_image.original_object = item
+				# Warning (from warnings module):
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMakerWeb\env\lib\site-packages\PIL\TiffImagePlugin.py", line 819
+				#     warnings.warn(str(msg))
+				# UserWarning: Corrupt EXIF data.  Expecting to read 4 bytes but only got 0. 
+				# Traceback (most recent call last):
+				#   File "<pyshell#81>", line 1, in <module>
+				#     piece_list = mm.PieceList(list(pieces))
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMaker\wantsomechocolate.py", line 11, in wrapper_timer
+				#     value = func(*args, **kwargs)
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMaker\mosaic_maker.py", line 962, in __init__
+				#     self._pieces = self.__process_pieces_arg(arg)
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMaker\mosaic_maker.py", line 982, in __process_pieces_arg
+				#     pieces = self.__create_piece_list_from_list_of_objects(arg)
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMaker\mosaic_maker.py", line 1005, in __create_piece_list_from_list_of_objects
+				#     piece_mosaic_image.to_thumbnail(size = self._default_save_size)
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMaker\mosaic_maker.py", line 133, in to_thumbnail
+				#     self.correct_orientation()
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMaker\mosaic_maker.py", line 126, in correct_orientation
+				#     self._img = wsc.rotate_based_on_exif(self._img)
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMaker\wantsomechocolate.py", line 50, in rotate_based_on_exif
+				#     exif=dict(image._getexif().items())
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMakerWeb\env\lib\site-packages\PIL\PngImagePlugin.py", line 973, in _getexif
+				#     return self.getexif()._get_merged_dict()
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMakerWeb\env\lib\site-packages\PIL\PngImagePlugin.py", line 979, in getexif
+				#     return super().getexif()
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMakerWeb\env\lib\site-packages\PIL\Image.py", line 1391, in getexif
+				#     self._exif.load(exif_info)
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMakerWeb\env\lib\site-packages\PIL\Image.py", line 3422, in load
+				#     self._info = TiffImagePlugin.ImageFileDirectory_v2(self.head)
+				#   File "C:\Users\JamesM\Projects\Programming\MosaicMakerWeb\env\lib\site-packages\PIL\TiffImagePlugin.py", line 491, in __init__
+				#     raise SyntaxError(f"not a TIFF file (header {repr(ifh)} not valid)")
+				# SyntaxError: not a TIFF file (header b'' not valid)
 
 
-			piece_mosaic_image.appearances = dict(	qty 					= 0 					, 
-													sections 				= [] 					, 
-													max_instances 			= self._max_instances 	, 
-													max_instances0 			= self._max_instances0 	,
-													max_instance_multiplier = 1 					,	)
+			try:
+				piece_mosaic_image.to_thumbnail(size = self._default_save_size)
 
-			# I hard coded some stuff dealing with 3 layer images, sorry. 
-			if piece_mosaic_image.rgb_data_shape[2] == 3:
-				pieces.append(piece_mosaic_image)
+
+				piece_mosaic_image.max_instances = self._max_instances
+				piece_mosaic_image.max_instances0 = self._max_instances0
+
+				#I need the original ref to the django db object, so I'm doing this for now, it feels ridiculous.
+				piece_mosaic_image.original_object = item
+
+
+				piece_mosaic_image.appearances = dict(	qty 					= 0 					, 
+														sections 				= [] 					, 
+														max_instances 			= self._max_instances 	, 
+														max_instances0 			= self._max_instances0 	,
+														max_instance_multiplier = 1 					,	)
+
+				# I hard coded some stuff dealing with 3 layer images, sorry. 
+				if piece_mosaic_image.rgb_data_shape[2] == 3:
+					pieces.append(piece_mosaic_image)
+
+			except SyntaxError:
+				pass
 
 
 		if len(pieces) == 0:
