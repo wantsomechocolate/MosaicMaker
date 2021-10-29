@@ -39,7 +39,25 @@ IMAGE_DEFAULT_COMPARISON_SIZE = (64,64)
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
 ## This file defines the following classes all related to creating photo mosaics. 
+
 ## Mosaic Image 	- A wrapper for a pillow image object
+	## What is the point of this class? Has is actually made it easier to work with images? 
+	## What if I just said, the only thing this takes is something that Image.open can be called on?
+		## for example, a relative path, an absolute path, etc
+	## Then when I need info about the image, I open it up and use it?
+
+	## I think what's happening is that I should assume the images I'm getting from a filesystem or db have already been 
+	## processed and I should have separate functions for processing piece images. 
+
+	## If someone wants to use regular sized images to populate a piece list, who am I to stop them? I have the comparison size thing going on anyway.
+	## So pieces get thumbnailed, rotated, named, converted to png, rgba'd to rgb etc on the way in (to either a db or a directory)
+	## Then when piece list wants them, what do I do?
+		## I want to be able to give piece list a list of diretories
+		## but I also want to be able to give piece list a queryset, or at least a list of objects that have a file location as an attribute
+		## So maybe I wasn't too far off, piece list can take a list of strings or a list of objects, if it's of strings you already have the 
+		## thing you give to Image.open
+		## If it's a list of objects then in the following order do Image.open(obj.img), Image.open(obj)????????????
+
 ## Mosaic 			- Holds information about the sections
 ## CompareImages	- Just a holder for the comparison functions used to compare sections and pieces
 ## PieceList 		- Holds the pieces, has some basic functionality for getting a piece list from a directory
@@ -137,7 +155,7 @@ class MosaicImage:
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
 
-@wsc.timer
+#@wsc.timer
 class Mosaic:
 	'''Size is a tuple of the form (width, height). Individual sections are accessed with [row][col]. 
 	First argument can be a string, PIL Image object, or MosacImage obect.'''
@@ -652,7 +670,7 @@ class Mosaic:
 	## FUNCTIONS THAT SAVE THINGS 
 	## #########################################################################################
 
-	@wsc.timer
+	#@wsc.timer
 	def save_sections(self):
 		
 		timestamp = str(int(datetime.utcnow().timestamp()))
@@ -673,7 +691,7 @@ class Mosaic:
 	## I think this function should also make a database entry so you can recreate it later!
 	## I now have access to all the information that is used to build the mosaic on the mosaic attributes, so use them
 	## 1.) when creating the directory name, and 2.) when building the html (put it in the metadata)
-	@wsc.timer
+	#@wsc.timer
 	def output_html(self,section_dim = 50):
 
 		start = datetime.utcnow()
@@ -777,7 +795,7 @@ body {{background:black;
 
 
 	## These mosaic output images can get massive, so I'm not making this a property
-	@wsc.timer
+	#@wsc.timer
 	def output_to_image(self,opts=dict()):
 
 		start = datetime.utcnow()
@@ -948,7 +966,7 @@ body {{background:black;
 ## if they need to be rotated, they should be rotated
 
 
-@wsc.timer
+#@wsc.timer
 class PieceList:
 
 	def __init__(self,arg=None,max_instances = 5):
@@ -1146,7 +1164,7 @@ class PieceList:
 
 
 
-	@wsc.timer
+	#@wsc.timer
 	def save(self, directory, file_ext = '.png'):
 		
 		os.makedirs(directory) if not os.path.exists(directory) else None

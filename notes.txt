@@ -1,8 +1,18 @@
-New Notes 1/11/21
+
+
+
 
 https://doc.rust-lang.org/stable/book/ch01-02-hello-world.html
 
 ## Immediate To Do list
+
+It has come to my attention that I literally open a gazillion images and never close them every time I make a mosaic
+What I should be doing is dealing with an object that simply knows how to find the image and then opening it when I need to and closing it when I don't.
+This required a fairly large overhaul to the system. 
+
+basically, the create method will need to change a bit because it will now need to open the file
+also, everything that references ".img" might need to be updated. 
+
 Continue with piece pinning
 
 make opacity an arg to the output html function (separate from django)
