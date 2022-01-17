@@ -1,5 +1,11 @@
 
 
+Ideas while reviewing the project:
+	I can stop calculating the error for a piece in the middle if the error exceeds a threshold, can't I? Complicated because the best matches might be excluded for other reasons later?
+
+	Why don't I resize the image to a very small one and then compare pixel x pixel? like save the image as a 16x16 square and do the comparison,
+	If PIL is much faster than I am, then this could be good stuff. I should write this comparison algorithm. 
+
 
 
 https://doc.rust-lang.org/stable/book/ch01-02-hello-world.html

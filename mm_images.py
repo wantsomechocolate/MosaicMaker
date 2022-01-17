@@ -1,24 +1,6 @@
-## What is my goal for this module
-## To take in query info and return image... links?
-## on the web version I'll want to view thumbnails and decide who to save and who not to save right?
-## but just using the script I just want it to return links, because in the end I want django to save the images as 512x512 thumbnails. 
-## I also think I should add in a default zoom of 125% - Done
 
-#Super low prio
-## other options are how to cut out the square - vertical align, horizontal align, should this image fetching thing be part of the pieces library?
-## oh yeah, I should try and figure out a way to find duplicate images, there must be a python library for that already
-
-## More worthwhile I think 
-## could also do it based on file name
-
-## another argument for making this part of the pieces library is that when the pieces are saved it would be useful to save the dominiant color and the search query
-## but in django, is it the pieces object that saves the pieces to the db? right now it's just a script that uses the pieces library and then saves it outside
-## of the pieces object. I don't want to take over the mosaic library so that it can only be used effectively in django. 
-
-
-## Perhaps this should just spit out a list of urls, then maybe the pieces library should be modified to handle a list of urls on init
-## it would take the urls and create a piece for each one of the specified thumbnail size, square, etc
-## the one foggy bit is where would the info about the query go? I want to save that information. and dominent color and all that. 
+## Some functions useful for generating piece libraries using the google cse
+## If I wanted to add functionality for creating piece lists from databases, or db queries, it would make sense to come here first.
 
 
 ## IMPORTS

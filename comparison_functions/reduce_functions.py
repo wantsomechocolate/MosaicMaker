@@ -103,3 +103,31 @@ def dominant_simple(
 
 
 
+#reisze the images to a small thing and just return all the pixel data
+def resize_image(
+	#docstring="""Uses PIL.Image.resize to reduce rgb data before sending to the error function"""
+	obj,
+	f = 8,
+	reset = True,
+	opts = dict(), ):
+
+	if reset:
+		if hasattr(obj,'rgb_resized_data'):
+			delattr(obj,'rgb_resized_data')
+
+	if not hasattr(obj, 'rgb_resized_data'):
+		ar =  np.asarray(obj.img.resize((f,f)))
+		shape = ar.shape
+		ar = ar.reshape((1,shape[0]*shape[1],shape[2]))
+		ar = ar.astype(np.int16)
+
+		obj.rgb_resized_data = ar[0]
+
+	return obj.rgb_resized_data
+
+
+
+
+
+
+
