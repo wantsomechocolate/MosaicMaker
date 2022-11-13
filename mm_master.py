@@ -11,7 +11,7 @@ import cv2
 ## BASIC USAGE
 ## ##############################################################################################################################################
 
-if False:
+if True:
 
         ## PIECE LIST - Create a piece_list - a list of MosaicImage objects that have been cropped as squares and resized to the default piece size.
         piece_list = mm.PieceList( r'demo\library',max_instances = 5 )
@@ -30,7 +30,7 @@ if False:
         #comparison_function = cf.build_comparison_function(cf.reduce_functions.average, cf.error_functions.rmse)
         
         ## Set the comparison granularity (f), section granularity (g), randomization (r), and neighborhood size (ns)        
-        f,g,r,ns = 3,50,0,5
+        f,g,r,ns = 2,40,0,5
 
         ## Specify reduce and error functions to override the default ones
         rf=cf.reduce_functions.average
@@ -48,7 +48,7 @@ if False:
             #comparison_function=comparison_function,
             
             f=f,
-            rgb_weighting = (1,1,1), ## Weights the error
+            rgb_weighting = (1,1.1,1.2), ## Weights the error
             random_max=r,
             neighborhood_size = ns,
 
@@ -188,7 +188,7 @@ if False:
 
 
 ## Create a mosaic of an image using its own sections as the pieces.
-if True: 
+if False: 
     mm.PIECE_DEFAULT_SAVE_SIZE = (128,128)
     master = mm.Mosaic(r'demo/scarjo.jpg', granularity=1/16)
     piece_list_directory = master.save_sections()
@@ -215,7 +215,7 @@ if True:
 
 
 ## Test out update_all_instances_of()
-if True: 
+if False: 
     piece_list = mm.PieceList( r'demo/library',max_instances = 5 )
     piece_list.default_save_size = (64,64)
     base_image_filepath = r'demo/scarjo.jpg'
@@ -234,7 +234,7 @@ if True:
     
 
 ## Build a custom comparison function and then use to create a mosaic. 
-if True: 
+if False: 
     piece_list = mm.PieceList( r'demo/library',max_instances = 5 )
     piece_list.default_save_size = (64,64)
     base_image_filepath = r'demo/scarjo.jpg'
@@ -245,7 +245,7 @@ if True:
 
 
 ## Update cluster size using dominant cluster reduce function
-if True:
+if False:
     piece_list = mm.PieceList( r'demo/library',max_instances = 5 )
     piece_list.default_save_size = (64,64)
     base_image_filepath = r'demo/scarjo.jpg'
